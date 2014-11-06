@@ -1,0 +1,36 @@
+#!/bin/bash
+
+if [ ! -z "${PREFIX}" ]; then
+	PREFIX_COLORED="[\033[0;32m$PREFIX\033[0m] "
+else
+	PREFIX_COLORED=""
+fi
+
+function Log {
+	if [ ! -z "$2" ]; then
+		echo -ne "${PREFIX_COLORED}$1"
+	else
+		echo -e "${PREFIX_COLORED}$1"
+	fi
+}
+function LogRed {
+	if [ ! -z "$2" ]; then
+		echo -ne "${PREFIX_COLORED}\033[0;31m$1\033[0m"
+	else
+		echo -e "${PREFIX_COLORED}\033[0;31m$1\033[0m"
+	fi
+}
+function LogGreen {
+	if [ ! -z "$2" ]; then
+		echo -ne "${PREFIX_COLORED}\033[0;32m$1\033[0m"
+	else
+		echo -e "${PREFIX_COLORED}\033[0;32m$1\033[0m"
+	fi
+}
+function LogBrown {
+	if [ ! -z "$2" ]; then
+		echo -ne "${PREFIX_COLORED}\033[0;33m$1\033[0m"
+	else
+		echo -e "${PREFIX_COLORED}\033[0;33m$1\033[0m"
+	fi
+}
