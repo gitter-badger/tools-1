@@ -1,0 +1,109 @@
+#!/bin/bash
+
+if [ -z "$SUDO_COMMAND" ]; then
+	mntusr=$(id -u) grpusr=$(id -g) sudo $0 $*
+	exit 0
+fi
+
+PREFIX='ftp'
+source "$(dirname "$(readlink -f "$0")")/config"
+source "${LIB}/log"
+source "${CMD}/ftp/tmp/mysql"
+
+if [ -z "${FTP_MYSQL_DATABASE}" ] || [ -z "${FTP_MYSQL_USERNAME}" ]; then
+	LogRed "FTP not configured. Missing MySQL details (${CMD}/ftp/tmp/mysql)"
+	exit
+fi
+
+while true; do
+	Log "Username: " true
+	read USERNAME
+
+	if [ ! -z "${USERNAME}" ]; then
+		break
+	fi
+done
+
+while true; do
+	Log "Password: " true
+	read -s PASSWORD
+
+	if [ ! -z "${PASSWORD}" ]; then
+		echo ""
+		break
+	fi
+	echo ""
+done
+
+while true; do
+	Log "Home path [/home/${USERNAME}]: " true
+	read CHROOTPATH
+
+	if [ -z "${CHROOTPATH}" ]; then
+		CHROOTPATH="/home/${USERNAME}"
+	fi
+
+	if [ -d "${CHROOTPATH}" ]; then
+		LogBrown "${CHROOTPATH} already exists! Are you sure? [y/n]: " true
+		read YN_DIR
+
+		case $YN_DIR in
+			[yY] | [y|Y][E|e][S|s] )
+				break
+				;;
+		esac
+	else
+		mkdir -p "${CHROOTPATH}"
+		chown ftp:ftp "${CHROOTPATH}"
+
+		break
+	fi
+done
+
+while true; do
+	Log "System user [ftp]: " true
+	read SYS_USER
+
+	if [ ! -z "${SYS_USER}" ]; then
+		SYS_UID=$(id -u ${SYS_USER} 2>&1)
+		if echo "${SYS_UID}" | grep -q 'no such user'; then
+			LogBrown "No such user found"
+		else
+			SYS_GID=$(id -g ${SYS_USER} 2>&1)
+			if echo "${SYS_GID}" | grep -q 'no such user'; then
+				SYS_GID=2001
+			fi
+			break
+		fi
+	else
+		SYS_UID=2001
+		SYS_GID=2001
+		break
+	fi
+done
+
+QUERY="INSERT INTO \`${FTP_MYSQL_DATABASE}\`.\`accounts\` (\`User\`, \`Status\`, \`Password\`, \`IPAccess\`, \`Dir\`, \`Uid\`, \`Gid\`, \`ULBandwidth\`, \`DLBandwidth\`, \`QuotaSize\`, \`QuotaFiles\`) VALUES ('${USERNAME}', '1', MD5('${PASSWORD}'), '*', '${CHROOTPATH}', '${SYS_UID}', '${SYS_GID}', '0', '0', '0', '0');"
+
+PASSTRY=0
+
+Log "Enter password for MySQL user ${FTP_MYSQL_USERNAME}"
+while true; do
+	RESULT=`mysql -u ${FTP_MYSQL_USERNAME} -p -e "${QUERY}" 2>&1`
+
+	if echo $RESULT | grep -q "ERROR 1045"; then
+		if (( $PASSTRY >= 2 )); then
+			LogRed "Three wrong authentication attempts. Exiting..."
+			exit
+		fi
+
+		PASSTRY=$((PASSTRY+1))
+
+		LogBrown "Wrong MySQL password. Please try again"
+	elif echo "${RESULT}" | grep -q "Duplicate entry '${USERNAME}'"; then
+		LogRed "This account already exists"
+		break
+	else
+		LogGreen "FTP user created: ${USERNAME}"
+		break
+	fi
+done

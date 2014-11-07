@@ -1,0 +1,221 @@
+#!/bin/bash
+
+clear
+
+if [ -z "$SUDO_COMMAND" ]; then
+	mntusr=$(id -u) grpusr=$(id -g) sudo $0 $*
+	exit 0
+fi
+
+PREFIX='ftp'
+COLWIDTH=30
+MAXWIDTH=$(($COLWIDTH * 2 + 7))
+source "$(dirname "$(readlink -f "$0")")/config"
+source "${LIB}/log"
+
+cd ${CMD}/ftp
+
+CONFIRMED=false
+
+function CollectData {
+	while true; do
+		if [ ! -z "${MYSQL_ROOT_PASS}" ]; then
+			RESULT=`mysql -u root -p${MYSQL_ROOT_PASS} -e "show databases" 2>&1`
+
+			if ! echo $RESULT | grep -q "ERROR 1045"; then
+				break
+			else
+				MYSQL_ROOT_PASS=
+			fi
+		fi
+
+		Log "MySQL root user password: " true
+		read -s MYSQL_ROOT_PASS
+		echo ""
+
+		if [ ! -z "${MYSQL_ROOT_PASS}" ]; then
+			RESULT=`mysql -u root -p${MYSQL_ROOT_PASS} -e "show databases" 2>&1`
+
+			if ! echo $RESULT | grep -q "ERROR 1045"; then
+				break
+			else
+				LogBrown "Wrong password for MySQL root user"
+			fi
+		else
+			LogBrown "Wrong password for MySQL root user"
+		fi
+	done
+
+	while true; do
+		Log "MySQL user [sys_ftp]: " true
+		read MYSQL_USER
+
+		if [ -z "${MYSQL_USER}" ]; then
+			MYSQL_USER='sys_ftp'
+		fi
+		break
+	done
+
+	while true; do
+		Log "MySQL password: " true
+		read -s MYSQL_PASS
+		echo ""
+
+		if [ ! -z "${MYSQL_PASS}" ]; then
+			break
+		fi
+	done
+
+	while true; do
+		Log "MySQL database [sys_ftp]: " true
+		read MYSQL_DATABASE
+
+		if [ -z "${MYSQL_DATABASE}" ]; then
+			MYSQL_DATABASE='sys_ftp'
+		fi
+		break
+	done
+
+	echo ""
+	Log 'Please confirm the data is correct:'
+
+	for (( i=1; i<=$MAXWIDTH; i++ )); do echo -n "-"; done && echo ""
+	printf "| %${COLWIDTH}s | %${COLWIDTH}s |\n" "MySQL root user password" "***********"
+	printf "| %${COLWIDTH}s | %${COLWIDTH}s |\n" "FTP MySQL database user" "${MYSQL_USER}"
+	printf "| %${COLWIDTH}s | %${COLWIDTH}s |\n" "FTP MySQL database password" "***********"
+	printf "| %${COLWIDTH}s | %${COLWIDTH}s |\n" "FTP MySQL database" "${MYSQL_DATABASE}"
+	for (( i=1; i<=$MAXWIDTH; i++ )); do echo -n "-"; done && echo ""
+
+	Log 'Is everything correct? [Y/n]: ' true
+	read YN
+
+	case $YN in
+
+		[nN] | [n|N][O|o] )
+			MYSQL_USER=
+			MYSQL_PASS=
+			MYSQL_DATABASE=
+			CollectData
+			;;
+		*)
+			CONFIRMED=true
+			;;
+	esac
+}
+
+if [ "${CONFIRMED}" != true ]; then
+	CollectData
+fi
+
+Log "Updating software repositories"
+
+apt-get update > /dev/null
+
+Log "Installing required software"
+
+if ! type mysql >/dev/null 2>&1; then
+	Log "Installing MySQL"
+	sudo debconf-set-selections <<< "mysql-server mysql-server/root_password password ${MYSQL_ROOT_PASS}"
+	sudo debconf-set-selections <<< "mysql-server mysql-server/root_password_again password ${MYSQL_ROOT_PASS}"
+	apt-get install -y mysql-server > /dev/null
+fi
+
+Log "Installing Pure-FTPD-MySQL"
+apt-get install -y pure-ftpd-mysql > /dev/null
+
+Log "Creating user: ftp"
+groupadd ftp -g 2001
+useradd -u 2001 -s /bin/false -d /bin/null -c "pureftpd user" -g ftp ftp
+
+cat > db.cnf <<EOF
+CREATE DATABASE \`${MYSQL_DATABASE}\`;
+GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP ON \`${MYSQL_DATABASE}\`.* TO "${MYSQL_USER}"@"localhost" IDENTIFIED BY "${MYSQL_PASS}";
+GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP ON \`${MYSQL_DATABASE}\`.* TO "${MYSQL_USER}"@"localhost.localdomain" IDENTIFIED BY "${MYSQL_PASS}";
+FLUSH PRIVILEGES;
+
+USE \`${MYSQL_DATABASE}\`;
+
+CREATE TABLE accounts (
+	User varchar(16) NOT NULL default '',
+	Status enum('0','1') NOT NULL default '0',
+	Password varchar(64) NOT NULL default '',
+	IPAccess varchar(15) NOT NULL default '*',
+	Dir varchar(128) NOT NULL default '',
+	Uid varchar(11) NOT NULL default '-1',
+	Gid varchar(11) NOT NULL default '-1',
+	ULBandwidth smallint(5) NOT NULL default '0',
+	DLBandwidth smallint(5) NOT NULL default '0',
+	QuotaSize smallint(5) NOT NULL default '0',
+	QuotaFiles int(11) NOT NULL default 0,
+	PRIMARY KEY (User),
+	UNIQUE KEY User (User)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+EOF
+
+Log "Setting up MySQL database ${MYSQL_DATABASE} and user ${MYSQL_USER}"
+
+mysql -u root -p${MYSQL_ROOT_PASS} < db.cnf
+rm db.cnf
+
+Log "Creating configuration files"
+
+cp /etc/pure-ftpd/db/mysql.conf /etc/pure-ftpd/db/mysql.conf.bak
+cat > /etc/pure-ftpd/db/mysql.conf <<EOF
+MYSQLSocket      /var/run/mysqld/mysqld.sock
+#MYSQLServer     localhost
+#MYSQLPort       3306
+MYSQLUser       ${MYSQL_USER}
+MYSQLPassword   ${MYSQL_PASS}
+MYSQLDatabase   ${MYSQL_DATABASE}
+#MYSQLCrypt md5, cleartext, crypt() or password() - md5 is VERY RECOMMENDABLE uppon cleartext
+MYSQLCrypt      md5
+MYSQLGetPW      SELECT Password FROM ${MYSQL_DATABASE}.accounts WHERE User="\L" AND Status="1" AND (IPAccess = "*" OR IPAccess LIKE "\R")
+MYSQLGetUID     SELECT Uid FROM ${MYSQL_DATABASE}.accounts WHERE User="\L" AND Status="1" AND (IPAccess = "*" OR IPAccess LIKE "\R")
+MYSQLGetGID     SELECT Gid FROM ${MYSQL_DATABASE}.accounts WHERE User="\L" AND Status="1" AND (IPAccess = "*" OR IPAccess LIKE "\R")
+MYSQLGetDir     SELECT Dir FROM ${MYSQL_DATABASE}.accounts WHERE User="\L" AND Status="1" AND (IPAccess = "*" OR IPAccess LIKE "\R")
+MySQLGetBandwidthUL SELECT ULBandwidth FROM ${MYSQL_DATABASE}.accounts WHERE User="\L" AND Status="1" AND (IPAccess = "*" OR IPAccess LIKE "\R")
+MySQLGetBandwidthDL SELECT DLBandwidth FROM ${MYSQL_DATABASE}.accounts WHERE User="\L" AND Status="1" AND (IPAccess = "*" OR IPAccess LIKE "\R")
+MySQLGetQTASZ   SELECT QuotaSize FROM ${MYSQL_DATABASE}.accounts WHERE User="\L" AND Status="1" AND (IPAccess = "*" OR IPAccess LIKE "\R")
+MySQLGetQTAFS   SELECT QuotaFiles FROM ${MYSQL_DATABASE}.accounts WHERE User="\L" AND Status="1" AND (IPAccess = "*" OR IPAccess LIKE "\R")
+EOF
+
+echo "yes" > /etc/pure-ftpd/conf/ChrootEveryone
+echo "yes" > /etc/pure-ftpd/conf/DontResolve
+echo 2 > /etc/pure-ftpd/conf/TLS
+
+cat > openssl.cnf <<EOF
+[ req ]
+prompt = no
+distinguished_name = req_distinguished_name
+
+[ req_distinguished_name ]
+C = BG
+ST = Varna
+L = Varna
+O = none
+OU = none
+CN = $(hostname)
+emailAddress = hostmaster@$(hostname)
+EOF
+
+openssl req -config openssl.cnf -x509 -nodes -days 7300 -newkey rsa:2048 -keyout "/etc/ssl/private/pure-ftpd.pem" -out "/etc/ssl/private/pure-ftpd.pem" > /dev/null
+
+rm openssl.cnf
+
+chmod 600 /etc/ssl/private/pure-ftpd.pem
+
+Log "Saving database name and database username in local config"
+
+mkdir tmp
+cat > tmp/mysql <<EOF
+FTP_MYSQL_DATABASE="${MYSQL_DATABASE}"
+FTP_MYSQL_USERNAME="${MYSQL_USER}"
+EOF
+
+Log "Restarting services for changes to take effect"
+
+/etc/init.d/pure-ftpd-mysql restart 1> /dev/null
+
+echo ""
+LogGreen "FTP server successfully installed!"
+echo ""
