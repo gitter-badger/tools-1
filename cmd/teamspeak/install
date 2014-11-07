@@ -47,4 +47,4 @@ Log "Registering startup script to defaults"
 update-rc.d ts defaults > /dev/null
 
 LogGreen "Done! Start the server with:"
-LogGreen "/etc/init.d/ts start"
+LogBlue "/etc/init.d/ts start"

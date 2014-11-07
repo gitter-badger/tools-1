@@ -34,3 +34,10 @@ function LogBrown {
 		echo -e "${PREFIX_COLORED}\033[0;33m$1\033[0m"
 	fi
 }
+function LogBlue {
+	if [ ! -z "$2" ]; then
+		echo -ne "${PREFIX_COLORED}\033[0;36m$1\033[0m"
+	else
+		echo -e "${PREFIX_COLORED}\033[0;36m$1\033[0m"
+	fi
+}
