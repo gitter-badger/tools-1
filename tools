@@ -1,0 +1,59 @@
+#!/bin/bash
+
+PREFIX='tools'
+
+DIR=$(dirname "$(readlink -f "$0")")
+source "${DIR}/config"
+source "${DIR}/lib/log"
+
+function Join { local IFS="$1"; shift; echo -n "$*"; }
+
+function ShowHelp {
+	local SELECTEDCMD="$1"
+
+	cd ${CMD}
+
+	COMMANDS=$(find . -maxdepth 1 -type d -not -path "." -exec basename {} \;)
+
+	for CM in ${COMMANDS}; do
+		if [ ! -z "${SELECTEDCMD}" ]; then
+			if [ "${CM}" != "${SELECTEDCMD}" ]; then
+				continue
+			fi
+		fi
+
+		Log "➤  ${CM}" true
+
+		PARAMS=$(find ${CM} -maxdepth 1 -type f -not -path "." -exec basename {} \;)
+		if [ ${#PARAMS} -gt 0 ]; then
+			echo -n " ["; Join "|" ${PARAMS}; echo -n "]"
+		fi
+		echo ""
+		Log ""
+	done
+}
+
+if [ -z "$1" ]; then
+	LogBrown "Available commands and their arguments:"
+	Log ""
+	ShowHelp
+	exit
+fi
+
+if [ ! -d "${CMD}/$1" ]; then
+	LogBrown "Command not found: $1"
+	Log ""
+	ShowHelp
+	exit
+fi
+
+if [ ! -f "${CMD}/$1/$2" ]; then
+	LogBrown "Command argument is invalid: $2"
+	Log ""
+	ShowHelp $1
+	exit
+fi
+
+# Invoke command
+
+. ${CMD}/$1/$2 ${*:3}

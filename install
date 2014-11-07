@@ -1,0 +1,42 @@
+#!/bin/bash
+
+clear
+
+if [ -z "$SUDO_COMMAND" ]; then
+	mntusr=$(id -u) grpusr=$(id -g) sudo $0 $*
+	exit 0
+fi
+
+PREFIX='tools installer'
+DIR=$(dirname "$(readlink -f "$0")")
+
+source "${DIR}/config"
+source "${DIR}/lib/log"
+
+Log "Installing ..."
+
+if [ ! -d "${BINDIR}" ]; then
+	LogBrown "${BINDIR} does not exists. Attempt to create it"
+
+	if [ ! $(mkdir ${BINDIR} 2> /dev/null) ]; then
+		LogRed "Could not create ${BINDIR}"
+		exit
+	fi
+
+	Log "Changing owner of ${BINDIR} to ${USERNAME}"
+	sudo chown "${USERNAME}" "${BINDIR}"
+fi
+
+if [ ! -w "${BINDIR}" ]; then
+	LogRed "${BINDIR} is not writable by you"
+	exit
+fi
+
+if [ -h "${BINDIR}/tools" ]; then
+	LogRed "Symbolic link already exists: ${BINDIR}/tools"
+	exit
+fi
+
+ln -s ${DIR}/tools ${BINDIR}/tools
+
+LogGreen "Installation was successful!"

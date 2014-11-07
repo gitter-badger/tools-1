@@ -1,0 +1,32 @@
+#!/bin/bash
+
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ]; do
+	DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+	SOURCE="$(readlink "$SOURCE")"
+	[[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+
+# Main directories
+TOOLS="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+CMD="${TOOLS}/cmd"
+SRC="${TOOLS}/src"
+
+# Commands configs
+
+USERNAME=`who am i | awk '{print $1}'`
+
+BINDIR="/usr/local/bin"
+INSTALLDIR="/usr/local/lib"
+
+WEBDIR="/srv/www"
+WEBDIR_PUBLIC="www/public"
+
+GITDIR="/srv/git"
+GITTEMPLATES="${TOOLS}/${CMD}/git/templates"
+
+MAILDIR="/srv/mail"
+MAILUSER="vmail"
+
+AUTHORIZED_KEYS=/etc/ssh
+SITES_SSH_KEYS="${AUTHORIZED_KEYS}/SITES_SSH_KEYS"
