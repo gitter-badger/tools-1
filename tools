@@ -6,6 +6,11 @@ DIR=$(dirname "$(readlink -f "$0")")
 source "${DIR}/config"
 source "${DIR}/lib/log"
 
+if [ ! -h "${BINDIR}/${CMDNAME}" ]; then
+	LogRed "${CMDNAME} is not installed! Run ./install"
+	exit
+fi
+
 function Join { local IFS="$1"; shift; echo -n "$*"; }
 
 function ShowHelp {

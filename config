@@ -7,6 +7,8 @@ while [ -h "$SOURCE" ]; do
 	[[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
 done
 
+CMDNAME="tools"
+
 # Main directories
 TOOLS="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 CMD="${TOOLS}/cmd"

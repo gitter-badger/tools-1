@@ -32,11 +32,11 @@ if [ ! -w "${BINDIR}" ]; then
 	exit
 fi
 
-if [ -h "${BINDIR}/tools" ]; then
-	LogRed "Symbolic link already exists: ${BINDIR}/tools"
+if [ -h "${BINDIR}/${CMDNAME}" ]; then
+	LogRed "Symbolic link already exists: ${BINDIR}/${CMDNAME}"
 	exit
 fi
 
-ln -s ${DIR}/tools ${BINDIR}/tools
+ln -s ${DIR}/${CMDNAME} ${BINDIR}/${CMDNAME}
 
 LogGreen "Installation was successful!"
