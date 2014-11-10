@@ -17,18 +17,18 @@ fi
 
 while true; do
 	Log "Username: " true
-	read USERNAME
+	read FTP_USERNAME
 
-	if [ ! -z "${USERNAME}" ]; then
+	if [ ! -z "${FTP_USERNAME}" ]; then
 		break
 	fi
 done
 
 while true; do
 	Log "Password: " true
-	read -s PASSWORD
+	read -s FTP_PASSWORD
 
-	if [ ! -z "${PASSWORD}" ]; then
+	if [ ! -z "${FTP_PASSWORD}" ]; then
 		echo ""
 		break
 	fi
@@ -36,11 +36,11 @@ while true; do
 done
 
 while true; do
-	Log "Home path [/home/${USERNAME}]: " true
+	Log "Home path [/home/${FTP_USERNAME}]: " true
 	read CHROOTPATH
 
 	if [ -z "${CHROOTPATH}" ]; then
-		CHROOTPATH="/home/${USERNAME}"
+		CHROOTPATH="/home/${FTP_USERNAME}"
 	fi
 
 	if [ -d "${CHROOTPATH}" ]; then
@@ -84,7 +84,7 @@ done
 
 chown "${SYS_USER}":"${SYS_USER}" "${CHROOTPATH}"
 
-QUERY="INSERT INTO \`${FTP_MYSQL_DATABASE}\`.\`accounts\` (\`User\`, \`Status\`, \`Password\`, \`IPAccess\`, \`Dir\`, \`Uid\`, \`Gid\`, \`ULBandwidth\`, \`DLBandwidth\`, \`QuotaSize\`, \`QuotaFiles\`) VALUES ('${USERNAME}', '1', MD5('${PASSWORD}'), '*', '${CHROOTPATH}', '${SYS_UID}', '${SYS_GID}', '0', '0', '0', '0');"
+QUERY="INSERT INTO \`${FTP_MYSQL_DATABASE}\`.\`accounts\` (\`User\`, \`Status\`, \`Password\`, \`IPAccess\`, \`Dir\`, \`Uid\`, \`Gid\`, \`ULBandwidth\`, \`DLBandwidth\`, \`QuotaSize\`, \`QuotaFiles\`) VALUES ('${FTP_USERNAME}', '1', MD5('${FTP_PASSWORD}'), '*', '${CHROOTPATH}', '${SYS_UID}', '${SYS_GID}', '0', '0', '0', '0');"
 
 PASSTRY=0
 
@@ -101,11 +101,11 @@ while true; do
 		PASSTRY=$((PASSTRY+1))
 
 		LogBrown "Wrong MySQL password. Please try again"
-	elif echo "${RESULT}" | grep -q "Duplicate entry '${USERNAME}'"; then
+	elif echo "${RESULT}" | grep -q "Duplicate entry '${FTP_USERNAME}'"; then
 		LogRed "This account already exists"
 		break
 	else
-		LogGreen "FTP user created: ${USERNAME}"
+		LogGreen "FTP user created: ${FTP_USERNAME}"
 		break
 	fi
 done
