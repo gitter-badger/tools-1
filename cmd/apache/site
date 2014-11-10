@@ -37,7 +37,6 @@ SITE_LOGS="${SITE}/logs"
 SITE_PUBLIC="${SITE}/${WEBDIR_PUBLIC}"
 SITE_GIT="${GITDIR}/${DOMAIN}"
 SITE_GIT_SYMLINK="${SITE}/git"
-SITE_SSH_KEYS="${AUTHORIZED_KEYS}/${DOMAIN}"
 FPM_SOCKET="/var/run/php5-fpm-${DOMAIN}.sock"
 
 if [ ! -d "${WEBDIR}" ]; then
@@ -63,12 +62,6 @@ if [ ! -d "${SITE}" ]; then
 
 	Log "Creating git repository symlink in ${SITE_GIT_SYMLINK}"
 	ln -s "${SITE_GIT}" "${SITE_GIT_SYMLINK}"
-
-	if [ -d "${SITES_SSH_KEYS}" ]; then
-		Log "Setting ssh access for ${DOMAIN}"
-		cp -R "${SITES_SSH_KEYS}" "${SITE_SSH_KEYS}"
-		chown -R "${DOMAIN}":"${DOMAIN}" "${SITE_SSH_KEYS}"
-	fi
 
 	if [ ! -f "${SITE_PUBLIC}/index.php" ]; then
 		echo "<h1>${DOMAIN} is under construction!</h1>" > "${SITE_PUBLIC}/index.php"
