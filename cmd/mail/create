@@ -15,13 +15,6 @@ if [ -z "${MAIL_MYSQL_DATABASE}" ] || [ -z "${MAIL_MYSQL_USERNAME}" ]; then
 	exit
 fi
 
-# Format for using this command:
-# 1)
-# 	create
-# 2)
-# 	create EMAIL PASSWORD OWNER_NAME
-# 	create email@domain.tld myPassHere321 "Ivan Dokov"
-
 if [ ! -z "$1" ]; then
 	EMAIL="$1"
 fi
