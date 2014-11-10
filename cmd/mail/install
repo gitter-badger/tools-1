@@ -5,6 +5,8 @@ if [ -z "$SUDO_COMMAND" ]; then
 	exit 0
 fi
 
+clear
+
 PREFIX='mail'
 source "$(dirname $(dirname $(dirname "$(readlink -f "$0")")))/config"
 source "${LIB}/log"
