@@ -118,6 +118,9 @@ if ! type mysql >/dev/null 2>&1; then
 	sudo debconf-set-selections <<< "mysql-server mysql-server/root_password password ${MYSQL_ROOT_PASS}"
 	sudo debconf-set-selections <<< "mysql-server mysql-server/root_password_again password ${MYSQL_ROOT_PASS}"
 	apt-get install -y mysql-server > /dev/null
+
+	LogGreen "MySQL installed successfully"
+	LogBrown "Suggestion: secure the database with mysql_secure_installation"
 fi
 
 Log "Installing Pure-FTPD-MySQL"
