@@ -7,7 +7,7 @@ fi
 
 clear
 
-PREFIX='apache'
+PREFIX='nginx'
 source "$(dirname $(dirname $(dirname "$(readlink -f "$0")")))/config"
 source "${LIB}/log"
 
