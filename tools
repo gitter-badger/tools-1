@@ -56,4 +56,4 @@ fi
 
 # Invoke command
 
-. ${CMD}/$1/$2 ${*:3}
+bash "${CMD}/$1/$2" ${*:3}
