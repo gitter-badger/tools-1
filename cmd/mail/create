@@ -1,0 +1,138 @@
+#!/bin/bash
+
+if [ -z "$SUDO_COMMAND" ]; then
+	mntusr=$(id -u) grpusr=$(id -g) sudo $0 $*
+	exit 0
+fi
+
+PREFIX='mail'
+source "$(dirname $(dirname $(dirname "$(readlink -f "$0")")))/config"
+source "${LIB}/log"
+source "${CMD}/mail/tmp/mysql"
+
+if [ -z "${MAIL_MYSQL_DATABASE}" ] || [ -z "${MAIL_MYSQL_USERNAME}" ]; then
+	LogRed "Mail not configured. Missing MySQL details (${CMD}/mail/tmp/mysql)"
+	exit
+fi
+
+# Format for using this command:
+# 1)
+# 	create
+# 2)
+# 	create EMAIL PASSWORD OWNER_NAME
+# 	create email@domain.tld myPassHere321 "Ivan Dokov"
+
+if [ ! -z "$1" ]; then
+	EMAIL="$1"
+fi
+if [ ! -z "$2" ]; then
+	PASSWORD="$2"
+fi
+if [ ! -z "$3" ]; then
+	NAME="$3"
+fi
+
+if [ -z "$NAME" ]; then
+	while true; do
+		Log "Name: " true
+		read NAME
+
+		if [ ! -z "$NAME" ]; then
+			break
+		fi
+	done
+fi
+
+if [ -z "$EMAIL" ]; then
+	while true; do
+		Log "Email: " true
+		read EMAIL
+
+		if [ ! -z "$EMAIL" ]; then
+			break
+		fi
+	done
+fi
+
+USER=$(echo "${EMAIL}" | awk -F\@ '{print $1}')
+DOMAIN=$(echo "${EMAIL}" | awk -F\@ '{print $2}')
+
+if [ -z "$DOMAIN" ]; then
+	LogRed "Email format is invalid. Missing @. Must be full email: nobody@example.com"
+	exit
+fi
+
+if [ -z "$PASSWORD" ]; then
+	while true; do
+		Log "Password: " true
+		read -s PASSWORD
+
+		if [ ! -z "${PASSWORD}" ]; then
+			echo ""
+			break
+		fi
+		echo ""
+	done
+fi
+
+if [ ! -z "${MAIL_MYSQL_PASSWORD}" ]; then
+	MYSQLPASSCHECK=`MYSQL_PWD=${MAIL_MYSQL_PASSWORD} mysql -u ${MAIL_MYSQL_USERNAME} -e "DESCRIBE ${MAIL_MYSQL_DATABASE}.domains" 2>&1`
+
+	if echo $MYSQLPASSCHECK | grep -q "ERROR 1045"; then
+		MAIL_MYSQL_PASSWORD=
+	fi
+fi
+
+if [ -z "${MAIL_MYSQL_PASSWORD}" ]; then
+	PASSTRY=1
+	while true; do
+		Log "Enter password for MySQL user [${MAIL_MYSQL_USERNAME}]: " true
+		read -s MAIL_MYSQL_PASSWORD
+		MYSQLPASSCHECK=`MYSQL_PWD=${MAIL_MYSQL_PASSWORD} mysql -u ${MAIL_MYSQL_USERNAME} -e "DESCRIBE ${MAIL_MYSQL_DATABASE}.domains" 2>&1`
+
+		echo ""
+
+		if echo $MYSQLPASSCHECK | grep -q "ERROR 1045"; then
+			if (( $PASSTRY >= 3 )); then
+				LogRed "Three wrong authentication attempts. Exiting..."
+				exit
+			fi
+
+			PASSTRY=$((PASSTRY+1))
+
+			LogBrown "Wrong password"
+		else
+			break
+		fi
+	done
+fi
+
+DOMAIN_ID=`MYSQL_PWD=${MAIL_MYSQL_PASSWORD} mysql -u${MAIL_MYSQL_USERNAME} -s -N -e "SELECT id FROM ${MAIL_MYSQL_DATABASE}.domains WHERE domain='${DOMAIN}'"`
+
+if [ -z "$DOMAIN_ID" ]; then
+	MYSQL_PWD=${MAIL_MYSQL_PASSWORD} mysql -u${MAIL_MYSQL_USERNAME} -s -N -e "INSERT INTO ${MAIL_MYSQL_DATABASE}.domains (domain) VALUES ('${DOMAIN}')"
+	DOMAIN_ID=`MYSQL_PWD=${MAIL_MYSQL_PASSWORD} mysql -u${MAIL_MYSQL_USERNAME} -s -N -e "SELECT id FROM ${MAIL_MYSQL_DATABASE}.domains WHERE domain='${DOMAIN}'"`
+fi
+
+QUERY="
+INSERT INTO ${MAIL_MYSQL_DATABASE}.emails (domain_id, name, email, password)
+	VALUES
+('${DOMAIN_ID}', '${NAME}', '${EMAIL}', ENCRYPT('${PASSWORD}', CONCAT('\$6\$', SUBSTRING(SHA(RAND()), -16))));
+"
+while true; do
+	RESULT=`MYSQL_PWD=${MAIL_MYSQL_PASSWORD} mysql -u ${MAIL_MYSQL_USERNAME} -e "${QUERY}" 2>&1`
+
+	if echo $RESULT | grep -q "Duplicate entry '${EMAIL}'"; then
+		LogRed "This email already exists"
+		break
+	else
+		mkdir -p ${MAILDIR}/${DOMAIN}/
+		maildirmake.dovecot ${MAILDIR}/${DOMAIN}/${USER}/
+		chown -R ${MAILUSER}:${MAILUSER} ${MAILDIR}/${DOMAIN}/
+
+		Log "Maildir created in ${MAILDIR}/${DOMAIN}/${USER}/"
+
+		LogGreen "Email ${EMAIL} successfully created"
+		break
+	fi
+done
