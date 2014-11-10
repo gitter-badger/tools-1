@@ -1,11 +1,11 @@
 #!/bin/bash
 
-clear
-
 if [ -z "$SUDO_COMMAND" ]; then
 	mntusr=$(id -u) grpusr=$(id -g) sudo $0 $*
 	exit 0
 fi
+
+clear
 
 PREFIX='apache'
 source "$(dirname $(dirname $(dirname "$(readlink -f "$0")")))/config"
@@ -34,10 +34,24 @@ if ! type mysql >/dev/null 2>&1; then
 	esac
 fi
 
+Log "Checking for multiverse repositories"
+if ! grep 'deb http://archive.ubuntu.com/ubuntu' /etc/apt/sources.list | grep -v '#' | grep -q 'multiverse'; then
+	echo "deb http://archive.ubuntu.com/ubuntu trusty multiverse" >> /etc/apt/sources.list;
+	Log "Added deb http://archive.ubuntu.com/ubuntu trusty multiverse"
+fi
+if ! grep 'deb http://archive.ubuntu.com/ubuntu trusty-updates multiverse' /etc/apt/sources.list | grep -v '#' | grep -q 'multiverse'; then
+	echo "deb http://archive.ubuntu.com/ubuntu trusty-updates multiverse" >> /etc/apt/sources.list;
+	Log "Added deb http://archive.ubuntu.com/ubuntu trusty-updates multiverse"
+fi
+if ! grep 'deb http://security.ubuntu.com/ubuntu trusty-security multiverse' /etc/apt/sources.list | grep -v '#' | grep -q 'multiverse'; then
+	echo "deb http://security.ubuntu.com/ubuntu trusty-security multiverse" >> /etc/apt/sources.list;
+	Log "Added deb http://security.ubuntu.com/ubuntu trusty-security multiverse"
+fi
+
 Log "Updating software repositories"
 apt-get update > /dev/null
 
-Log "Installing web server"
+Log "Installing Apache2"
 apt-get install -y -q apache2 libapache2-mod-fastcgi php5-fpm php5-mysql php5-curl php5-mcrypt php5-cli php5-gd php5-intl > /dev/null
 
 if ! cat /etc/apache2/apache2.conf | grep -q 'ServerName'; then
