@@ -24,7 +24,6 @@ WEBDIR="/srv/www"
 WEBDIR_PUBLIC="www/public"
 
 GITDIR="/srv/git"
-GITTEMPLATES="${TOOLS}/${CMD}/git/templates"
 
 MAILDIR="/srv/mail"
 MAILUSER="vmail"
