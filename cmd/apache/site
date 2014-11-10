@@ -1,9 +1,8 @@
 #!/bin/bash
 
 PREFIX='site'
-DIR=$(dirname "$(readlink -f "$0")")
-source "$(dirname $(dirname ${DIR}))/lib/log"
-source "$(dirname $(dirname ${DIR}))/config"
+source "$(dirname $(dirname $(dirname "$(readlink -f "$0")")))/config"
+source "${LIB}/log"
 
 cd ${CMD}/apache
 
