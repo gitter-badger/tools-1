@@ -54,7 +54,6 @@ while true; do
 		esac
 	else
 		mkdir -p "${CHROOTPATH}"
-		chown ftp:ftp "${CHROOTPATH}"
 
 		break
 	fi
@@ -81,6 +80,9 @@ while true; do
 		break
 	fi
 done
+
+
+chown "${SYS_USER}":"${SYS_USER}" "${CHROOTPATH}"
 
 QUERY="INSERT INTO \`${FTP_MYSQL_DATABASE}\`.\`accounts\` (\`User\`, \`Status\`, \`Password\`, \`IPAccess\`, \`Dir\`, \`Uid\`, \`Gid\`, \`ULBandwidth\`, \`DLBandwidth\`, \`QuotaSize\`, \`QuotaFiles\`) VALUES ('${USERNAME}', '1', MD5('${PASSWORD}'), '*', '${CHROOTPATH}', '${SYS_UID}', '${SYS_GID}', '0', '0', '0', '0');"
 
