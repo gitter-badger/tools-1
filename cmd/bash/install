@@ -8,7 +8,6 @@ fi
 clear
 
 PREFIX='bash'
-DIR=$(dirname "$(readlink -f "$0")")
 source "$(dirname "$(readlink -f "$0")")/lib/log"
 source "$(dirname "$(readlink -f "$0")")/config"
 
