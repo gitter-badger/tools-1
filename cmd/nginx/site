@@ -1,0 +1,148 @@
+#!/bin/bash
+
+PREFIX='site'
+source "$(dirname $(dirname $(dirname "$(readlink -f "$0")")))/config"
+source "${LIB}/log"
+
+cd ${CMD}/apache
+
+if [ -z "$SUDO_COMMAND" ]; then
+	mntusr=$(id -u) grpusr=$(id -g) sudo $0 $*
+	exit 0
+fi
+
+DOMAIN=$1
+
+while true; do
+	if [ -z "${DOMAIN}" ]; then
+		Log "Website domain: " true
+		read DOMAIN
+	else
+		break
+	fi
+done
+
+if [[ "${#DOMAIN}" -gt 32 ]]; then
+	LogRed "This domain name is too long. Max length 32 symbols"
+	exit
+fi
+
+VHOSTS_AVAILABLE=/etc/nginx/sites-available
+VHOSTS_ENABLED=/etc/nginx/sites-enabled
+FPM=/etc/php5/fpm/pool.d
+
+CONF_VHOST_AV="${VHOSTS_AVAILABLE}/${DOMAIN}.conf"
+CONF_VHOST_EN="${VHOSTS_ENABLED}/${DOMAIN}.conf"
+CONF_FPM="${FPM}/${DOMAIN}.conf"
+SITE="${WEBDIR}/${DOMAIN}"
+SITE_LOGS="${SITE}/logs"
+SITE_PUBLIC="${SITE}/${WEBDIR_PUBLIC}"
+SITE_GIT="${GITDIR}/${DOMAIN}"
+SITE_GIT_SYMLINK="${SITE}/git"
+SITE_SSH_KEYS="${AUTHORIZED_KEYS}/${DOMAIN}"
+FPM_SOCKET="/var/run/php5-fpm-${DOMAIN}.sock"
+
+if [ ! -d "${WEBDIR}" ]; then
+	mkdir -p "${WEBDIR}"
+fi
+
+if [ -f "${CONF_VHOST_AV}" ]; then
+	LogBrown "Vhost configuration file already exists (${CONF_VHOST_AV})"
+fi
+
+if [ ! -d "${SITE}" ]; then
+	Log "Creating system user ${DOMAIN}"
+	useradd -s /bin/bash -d "${SITE}" -M "${DOMAIN}"
+
+	Log "Creating site directories at ${SITE}"
+	mkdir -p "${SITE_LOGS}"
+	mkdir -p "${SITE_PUBLIC}"
+
+	Log "Creating site git repository"
+	mkdir -p "${SITE_GIT}"
+	git --bare init "${SITE_GIT}" --template "${CMD}/apache/template" > /dev/null
+	chown -R "${DOMAIN}":"${DOMAIN}" "${SITE_GIT}"
+
+	Log "Creating git repository symlink in ${SITE_GIT_SYMLINK}"
+	ln -s "${SITE_GIT}" "${SITE_GIT_SYMLINK}"
+
+	if [ ! -f "${SITE_PUBLIC}/index.php" ]; then
+		echo "<h1>${DOMAIN} is under construction!</h1>" > "${SITE_PUBLIC}/index.php"
+		Log "Created blank index.php"
+	fi
+
+	Log "Changing ownership of all site files to ${DOMAIN}:${DOMAIN}"
+	chown -R "${DOMAIN}":"${DOMAIN}" "${SITE}"
+else
+	LogBrown "Site webroot directory already exists (${SITE})"
+
+	if [ -f "${CONF_VHOST_AV}" ]; then
+		LogRed "Exiting... All files exists. Nothing to do"
+		exit
+	fi
+fi
+
+if [ ! -f "${CONF_VHOST_AV}" ]; then
+	{
+		echo "server {"
+		echo "	server_name  www.${DOMAIN};"
+		echo "	rewrite ^(.*) http://${DOMAIN}\$1 permanent;"
+		echo "}"
+		echo "server {"
+		echo "	listen 80;"
+		echo "	server_name ${DOMAIN};"
+		echo "	index index.html index.php;"
+		echo "	root ${SITE_PUBLIC};"
+		echo "	charset utf-8;"
+		echo ""
+		echo "	access_log ${SITE}/logs/access.log combined;"
+		echo "	error_log  ${SITE}/logs/error.log error;"
+		echo "	error_page 404 /index.php;"
+		echo ""
+		echo "	location / {"
+		echo "		try_files \$uri \$uri/ /index.php?\$query_string /index.html;"
+		echo "	}"
+		echo ""
+		echo "	location = /favicon.ico { access_log off; log_not_found off; }"
+		echo "	location = /robots.txt  { access_log off; log_not_found off; }"
+		echo ""
+		echo "	location ~ \.php$ {"
+		echo "		fastcgi_pass unix:${FPM_SOCKET};"
+		echo "		fastcgi_index index.php;"
+		echo "		fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;"
+		echo "		include fastcgi_params;"
+		echo "	}"
+		echo "}"
+	} > "$CONF_VHOST_AV"
+	Log "Vhost configuration file created"
+fi
+
+sudo ln -s ${CONF_VHOST_AV} ${CONF_VHOST_EN} > /dev/null
+Log "Vhost ${DOMAIN} enabled"
+
+Log "Reloading Nginx configurations"
+service nginx reload > /dev/null
+
+if [ ! -f "${CONF_FPM}" ]; then
+cat >> "${CONF_FPM}" <<EOF
+[${DOMAIN}]
+user = ${DOMAIN}
+group = ${DOMAIN}
+listen = ${FPM_SOCKET}
+listen.owner = www-data
+listen.group = www-data
+pm = dynamic
+pm.max_children = 10
+pm.start_servers = 2
+pm.min_spare_servers = 1
+pm.max_spare_servers = 3
+pm.max_requests = 200
+php_flag[display_errors] = on
+EOF
+	Log "php5-fpm configuration file created"
+
+	Log "Restarting php5-fpm server"
+	service php5-fpm restart > /dev/null
+fi
+
+LogGreen "Site ${DOMAIN} installed successfully"
