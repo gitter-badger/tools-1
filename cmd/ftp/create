@@ -60,7 +60,7 @@ while true; do
 done
 
 while true; do
-	Log "System user [ftp]: " true
+	Log "System user [${FTPUSER}]: " true
 	read SYS_USER
 
 	if [ ! -z "${SYS_USER}" ]; then
