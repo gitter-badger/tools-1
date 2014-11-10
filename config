@@ -28,5 +28,7 @@ GITDIR="/srv/git"
 MAILDIR="/srv/mail"
 MAILUSER="vmail"
 
+FTPUSER="ftp"
+
 AUTHORIZED_KEYS=/etc/ssh
 SITES_SSH_KEYS="${AUTHORIZED_KEYS}/SITES_SSH_KEYS"

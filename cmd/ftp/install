@@ -126,9 +126,9 @@ fi
 Log "Installing Pure-FTPD-MySQL"
 apt-get install -y pure-ftpd-mysql > /dev/null
 
-Log "Creating user: ftp"
-groupadd ftp -g 2001
-useradd -u 2001 -s /bin/false -d /bin/null -c "pureftpd user" -g ftp ftp
+Log "Creating user: ${FTPUSER}"
+groupadd "${FTPUSER}" -g 2001
+useradd -u 2001 -s /bin/false -d /bin/null -c "pureftpd user" -g "${FTPUSER}" "${FTPUSER}"
 
 cat > db.cnf <<EOF
 CREATE DATABASE \`${MYSQL_DATABASE}\`;

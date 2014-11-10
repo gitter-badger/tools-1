@@ -75,12 +75,12 @@ while true; do
 			break
 		fi
 	else
+		SYS_USER="${FTPUSER}"
 		SYS_UID=2001
 		SYS_GID=2001
 		break
 	fi
 done
-
 
 chown "${SYS_USER}":"${SYS_USER}" "${CHROOTPATH}"
 
