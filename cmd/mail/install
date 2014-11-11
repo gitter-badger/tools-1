@@ -13,6 +13,8 @@ source "${LIB}/log"
 
 cd ${CMD}/mail
 
+CheckIfInstalled
+
 COLWIDTH=30
 MAXWIDTH=$(($COLWIDTH * 2 + 7))
 CONFIRMED=false
@@ -492,7 +494,9 @@ mysql -u root -p${MYSQL_ROOT_PASS} < db.cnf
 rm db.cnf
 
 Log "Writing local database config file"
-mkdir tmp
+if [ ! -d tmp ]; then
+    mkdir tmp
+fi
 cat > tmp/mysql <<EOF
 MAIL_MYSQL_DATABASE="${MYSQL_DATABASE}"
 MAIL_MYSQL_USERNAME="${MYSQL_USER}"
@@ -505,6 +509,8 @@ echo ""
 
 service postfix restart
 service dovecot restart
+
+MarkInstalled
 
 echo ""
 LogGreen "Mail server successfully installed!"

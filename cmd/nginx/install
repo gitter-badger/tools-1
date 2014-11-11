@@ -11,6 +11,10 @@ PREFIX='nginx'
 source "$(dirname $(dirname $(dirname "$(readlink -f "$0")")))/config"
 source "${LIB}/log"
 
+cd ${CMD}/nginx
+
+CheckIfInstalled
+
 MYSQL=false
 
 if ! type mysql >/dev/null 2>&1; then
@@ -82,4 +86,8 @@ apt-get install -y -q git > /dev/null
 Log "Installing sendmail"
 apt-get install -y -q sendmail > /dev/null
 
+MarkInstalled
+
+echo ""
 LogGreen "Installed successfully"
+echo ""

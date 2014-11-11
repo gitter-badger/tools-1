@@ -12,8 +12,11 @@ COLWIDTH=30
 MAXWIDTH=$(($COLWIDTH * 2 + 7))
 source "$(dirname $(dirname $(dirname "$(readlink -f "$0")")))/config"
 source "${LIB}/log"
+source "${LIB}/installed"
 
 cd ${CMD}/ftp
+
+CheckIfInstalled
 
 CONFIRMED=false
 
@@ -209,7 +212,9 @@ chmod 600 /etc/ssl/private/pure-ftpd.pem
 
 Log "Saving database name and database username in local config"
 
-mkdir tmp
+if [ ! -d tmp ]; then
+	mkdir tmp
+fi
 cat > tmp/mysql <<EOF
 FTP_MYSQL_DATABASE="${MYSQL_DATABASE}"
 FTP_MYSQL_USERNAME="${MYSQL_USER}"
@@ -218,6 +223,8 @@ EOF
 Log "Restarting services for changes to take effect"
 
 /etc/init.d/pure-ftpd-mysql restart 1> /dev/null
+
+MarkInstalled
 
 echo ""
 LogGreen "FTP server successfully installed!"

@@ -13,6 +13,8 @@ source "${LIB}/log"
 
 cd ${CMD}/teamspeak
 
+CheckIfInstalled
+
 Log "Installing TeamSpeak 3 server to ${INSTALLDIR}/ts"
 if [ -n "`uname -m | grep 64`" ]; then
     cp -R x64 ${INSTALLDIR}/ts
@@ -46,5 +48,9 @@ chmod +x /etc/init.d/ts
 Log "Registering startup script to defaults"
 update-rc.d ts defaults > /dev/null
 
+MarkInstalled
+
+echo ""
 LogGreen "Done! Start the server with:"
 LogBlue "/etc/init.d/ts start"
+echo ""
