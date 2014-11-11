@@ -1,0 +1,15 @@
+#!/bin/bash
+
+function CheckIfInstalled {
+	if [ -f "tmp/installed" ]; then
+		LogRed "Already installed!"
+		exit
+	fi
+}
+
+function MarkInstalled {
+	if [ ! -d "tmp" ]; then
+		mkdir "tmp"
+	fi
+	touch "tmp/installed"
+}
