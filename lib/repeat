@@ -1,0 +1,16 @@
+#!/bin/bash
+
+function Repeat {
+    local COUNT SYMBOL
+    SYMBOL=$1
+    COUNT=$2
+
+    if [ -z "$SYMBOL" ]; then
+        SYMBOL="-"
+    fi
+    if [ -z "$COUNT" ]; then
+        COUNT=30
+    fi
+
+	echo $(for (( i=1; i<=${COUNT}; ++i )); do echo -n ${SYMBOL}; done && echo '')
+}

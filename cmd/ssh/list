@@ -1,0 +1,68 @@
+#!/bin/bash
+
+PREFIX='ssh'
+source "$(dirname $(dirname $(dirname "$(readlink -f "$0")")))/config"
+source "${LIB}/log"
+source "${LIB}/repeat"
+
+cd ${CMD}/ssh
+
+if [ -z "$SUDO_COMMAND" ]; then
+	mntusr=$(id -u) grpusr=$(id -g) sudo $0 $*
+	exit 0
+fi
+
+USERS=$(ls ${SSH_KEYS})
+USER=$1
+SPACE="          "
+DASHES=50
+
+function ExtractKeys
+{
+	local FILE KEYS ROW
+	FILE=$1
+
+	KEYS=$(sed -n "/${SSH_CONFIG_BANNER_START}/,/${SSH_CONFIG_BANNER_END}/p" ${FILE})
+	KEYS=$(echo "${KEYS}" | sed '/^$/d') # remove empty lines
+	KEYS=$(echo "${KEYS}" | grep -v "${SSH_CONFIG_BANNER_START}" | grep -v "${SSH_CONFIG_BANNER_END}")
+
+	if [ -z "${KEYS}" ]; then
+		LogBrown "${SPACE}No keys found"
+		return
+	fi
+
+	KEYS=$(echo "${KEYS}" | grep -v '# Key ')
+
+	while read -r ROW; do
+		if [ "$(echo ${ROW} | head -c 1)" = "#" ]; then
+			Log ""
+			Log "$(echo "${ROW}" | sed 's/^# //')"
+		else
+			echo "${ROW}"
+		fi
+	done <<< "${KEYS}"
+}
+
+if [ -z "${USER}" ]; then
+	Log "List of keys for all users"
+	Log $(Repeat "-" ${DASHES})
+	for USR in ${USERS}; do
+		Log "User: ${USR}"
+		ExtractKeys "${SSH_KEYS}/${USR}/${SSH_FILE}"
+		Log ""
+		Log $(Repeat "-" ${DASHES})
+	done
+	exit
+fi
+
+if [ ! -f "${SSH_KEYS}/${USER}/${SSH_FILE}" ]; then
+	LogBrown "No configuration found for user ${USER}"
+	exit
+fi
+
+Log "List of keys for user"
+Log "User: ${USER}"
+Log $(Repeat "-" ${DASHES})
+ExtractKeys "${SSH_KEYS}/${USER}/${SSH_FILE}"
+Log ""
+Log $(Repeat "-" ${DASHES})
