@@ -34,5 +34,5 @@ if ! grep -q 'source /root/.bash_profile' /root/.bashrc 2> /dev/null; then
 fi
 
 LogGreen "Successfully installed"
-Log "You should relogin or use this command:"
+Log "Reopen terminal or use this command:"
 LogBlue "source ~/.bash_profile"
