@@ -7,11 +7,11 @@ if [ -z "$SUDO_COMMAND" ]; then
 	exit 0
 fi
 
-PREFIX='tools installer'
+PREFIX='tools'
 DIR=$(dirname "$(readlink -f "$0")")
 
 source "${DIR}/config"
-source "${DIR}/lib/log"
+source "${LIB}/log"
 
 Log "Installing ..."
 
@@ -33,10 +33,46 @@ if [ ! -w "${BINDIR}" ]; then
 fi
 
 if [ -h "${BINDIR}/${CMDNAME}" ]; then
-	LogRed "Symbolic link already exists: ${BINDIR}/${CMDNAME}"
-	exit
+	LogBrown "Symbolic link already exists: ${BINDIR}/${CMDNAME}"
+else
+	Log "Creating symlink ${BINDIR}/${CMDNAME}"
+	ln -s ${DIR}/${CMDNAME} ${BINDIR}/${CMDNAME}
 fi
 
-ln -s ${DIR}/${CMDNAME} ${BINDIR}/${CMDNAME}
+Log "Installing bash completion"
+if [ ! -f "/etc/bash_completion.d/${CMDNAME}" ]; then
+cat >> "/etc/bash_completion.d/${CMDNAME}" <<EOF
+_tools()
+{
+    local CURCMD PREVCMD COMMANDS DIR CMD PARAMS
+    COMPREPLY=()
+    CURCMD="\${COMP_WORDS[COMP_CWORD]}"
+    PREVCMD="\${COMP_WORDS[COMP_CWORD-1]}"
+
+    DIR=\$(dirname "\$(readlink -f /usr/local/bin/tools)")
+
+    COMMANDS=\$(find "\${DIR}/cmd/" -maxdepth 1 -type d -not -path "\${DIR}/cmd/" -exec basename {} \;)
+
+    if [ ! -z "\${PREVCMD}" ]; then
+        for CMD in \${COMMANDS}; do
+            if [ "\${CMD}" != "\${PREVCMD}" ]; then
+                continue
+            fi
+
+            PARAMS=\$(find "\${DIR}/cmd/\${CMD}/" -maxdepth 1 -type f -not -path "\${DIR}/cmd/\${CMD}/" -exec basename {} \;)
+            COMPREPLY=( \$(compgen -W "\${PARAMS}" -- \${CURCMD}) )
+            return 0
+        done
+    fi
+
+    COMPREPLY=(\$(compgen -W "\${COMMANDS}" -- \${CURCMD}))
+    return 0
+}
+complete -F _tools tools
+EOF
+else
+	LogBrown "Bash completion already exists"
+fi
 
 LogGreen "Installation was successful!"
+LogBlue "Reopen terminal to activate bash completion"
