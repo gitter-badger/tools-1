@@ -22,7 +22,6 @@ if [ -z "${USER}" ] || [ -z "${NAME}" ]; then
 fi
 
 SYS_UID="$(id -g ${USER} 2>&1)"
-
 if echo "${SYS_UID}" | grep -q 'no such user'; then
 	LogRed "This user does not exist: ${USER}"
 	exit
@@ -64,7 +63,6 @@ KEYS=$(cat "${SSH_KEYS}/${USER}/${SSH_FILE}")
 
 set -- "$KEY"
 IFS=" "; declare -a KEY_PART=($*)
-
 if echo "${KEYS}" | grep -qF "${KEY_PART[1]}"; then
 	LogRed "This key already exists!"
 	exit
