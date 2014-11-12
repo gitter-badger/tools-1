@@ -21,7 +21,13 @@ if [ -z "${USER}" ]; then
 fi
 
 if [ -z "$NUMBER" ]; then
-	${CMDNAME} ssh list "${USER}" -v
+	LIST=$(${CMDNAME} ssh list "${USER}" -v)
+
+	if echo "${LIST}" | grep -q 'No keys found'; then
+		LogRed "This user does not have any keys"
+		exit
+	fi
+	echo "${LIST}"
 
 	NUM_REGEX='^[0-9]+$'
 	while true; do
