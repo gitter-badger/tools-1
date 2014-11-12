@@ -5,29 +5,42 @@ source "$(dirname $(dirname $(dirname "$(readlink -f "$0")")))/config"
 source "${LIB}/log"
 
 if [ -z "$SUDO_COMMAND" ]; then
-	mntusr=$(id -u) grpusr=$(id -g) sudo $0 $*
+	mntusr=$(id -u) grpusr=$(id -g) sudo $0 "$@"
 	exit 0
 fi
 
 cd ${CMD}/ssh
 
-USER=$1
-NAME=$2
-KEY=$3
+USER="$1"
+NAME="$2"
 
-if [ -z "${USER}" ] || [ -z "${NAME}" ]; then
-	LogRed "Missing params! Required:"
-	LogRed "${CMDNAME} ssh add [system user], [name]"
-	exit
+if [ -z "$USER" ]; then
+	while true; do
+		Log "System user: " true
+		read USER
+
+		SYS_UID="$(id -g ${USER} 2>&1)"
+		if echo "${SYS_UID}" | grep -q 'no such user'; then
+			LogBrown "This user does not exist"
+		else
+			break
+		fi
+	done
 fi
 
-SYS_UID="$(id -g ${USER} 2>&1)"
-if echo "${SYS_UID}" | grep -q 'no such user'; then
-	LogRed "This user does not exist: ${USER}"
-	exit
+if [ -z "${NAME}" ]; then
+	while true; do
+		Log "Key owner name: " true
+		read NAME
+
+		SYS_UID="$(id -g ${USER} 2>&1)"
+		if [ ! -z "${NAME}" ]; then
+			break
+		fi
+	done
 fi
 
-Log "Paste and press Ctrl-D to save"
+Log "Paste and press Ctrl-D on new line to save"
 KEY=$(cat)
 KEY=$(echo "${KEY}" | sed '/^$/d') # remove empty lines
 
