@@ -17,6 +17,10 @@ while true; do
 	if [ -z "${DOMAIN}" ]; then
 		Log "Website domain: " true
 		read DOMAIN
+	elif ! echo "${DOMAIN}" | grep -qP '(?=^.{5,254}$)(^(?:(?!\d+\.)[a-zA-Z0-9_\-]{1,63}\.?)+(?:[a-zA-Z]{2,})$)'; then
+		LogRed "This is not valid domain name"
+		Log "Website domain: " true
+		read DOMAIN
 	else
 		break
 	fi
