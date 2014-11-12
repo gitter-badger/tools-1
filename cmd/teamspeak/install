@@ -10,6 +10,7 @@ clear
 PREFIX='teamspeak'
 source "$(dirname $(dirname $(dirname "$(readlink -f "$0")")))/config"
 source "${LIB}/log"
+source "${LIB}/installed"
 
 cd ${CMD}/teamspeak
 
