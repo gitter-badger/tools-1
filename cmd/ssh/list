@@ -39,7 +39,8 @@ function ExtractKeys
 	KEYS=$(echo "${KEYS}" | grep -v "${SSH_CONFIG_BANNER_START}" | grep -v "${SSH_CONFIG_BANNER_END}")
 
 	if [ -z "${KEYS}" ]; then
-		LogBrown "${SPACE}No keys found"
+		Log ""
+		LogBrown "No keys found"
 		return
 	fi
 
