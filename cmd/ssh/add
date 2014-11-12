@@ -41,13 +41,15 @@ if [ "${#KEY}" -lt 100 ]; then
 	exit
 fi
 
-if [ ! -f "${SSH_KEYS}/${USER}/${SSH_FILE}" ]; then
+CONFIG_FILE="${SSH_KEYS}/${USER}/${SSH_FILE}"
+
+if [ ! -f "${CONFIG_FILE}" ]; then
 	Log "Creating user config directory"
 	mkdir -p "${SSH_KEYS}/${USER}"
 
 	Log "Creating user config file"
 
-cat > "${SSH_KEYS}/${USER}/${SSH_FILE}" <<EOF
+cat > "${CONFIG_FILE}" <<EOF
 ${SSH_CONFIG_BANNER_START}
 
 ${SSH_CONFIG_BANNER_END}
@@ -56,10 +58,10 @@ EOF
 	Log "Fixing config permissions"
 	chown -R "${USER}":"${USER}" "${SSH_KEYS}/${USER}"
 	chmod 600 "${SSH_KEYS}/${USER}"
-	chmod 400 "${SSH_KEYS}/${USER}/${SSH_FILE}"
+	chmod 400 "${CONFIG_FILE}"
 fi
 
-KEYS=$(cat "${SSH_KEYS}/${USER}/${SSH_FILE}")
+KEYS=$(cat "${CONFIG_FILE}")
 
 set -- "$KEY"
 IFS=" "; declare -a KEY_PART=($*)
@@ -80,7 +82,7 @@ ${SSH_CONFIG_BANNER_END}
 
 NEW_KEYS=$(printf "${KEYS}" "$FORMATTED_KEY")
 
-echo "${NEW_KEYS}" > "${SSH_KEYS}/${USER}/${SSH_FILE}"
+echo "${NEW_KEYS}" > "${CONFIG_FILE}"
 
 echo ""
 LogGreen "Key added successfully"
