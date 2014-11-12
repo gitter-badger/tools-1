@@ -25,7 +25,7 @@ function CollectData {
 		if [ ! -z "${MYSQL_ROOT_PASS}" ]; then
 			RESULT=`mysql -u root -p${MYSQL_ROOT_PASS} -e "show databases" 2>&1`
 
-			if ! echo $RESULT | grep -q "ERROR 1045"; then
+			if ! echo "${RESULT}" | grep -q "ERROR 1045"; then
 				break
 			else
 				MYSQL_ROOT_PASS=
