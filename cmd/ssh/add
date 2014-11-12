@@ -1,0 +1,90 @@
+#!/bin/bash
+
+PREFIX='ssh'
+source "$(dirname $(dirname $(dirname "$(readlink -f "$0")")))/config"
+source "${LIB}/log"
+source "${LIB}/repeat"
+
+cd ${CMD}/ssh
+
+if [ -z "$SUDO_COMMAND" ]; then
+	mntusr=$(id -u) grpusr=$(id -g) sudo $0 $*
+	exit 0
+fi
+
+USER=$1
+NAME=$2
+KEY=$3
+
+if [ -z "${USER}" ] || [ -z "${NAME}" ]; then
+	LogRed "Missing params! Required:"
+	LogRed "${CMDNAME} ssh add [system user], [name]"
+	exit
+fi
+
+SYS_UID="$(id -g ${USER} 2>&1)"
+
+if echo "${SYS_UID}" | grep -q 'no such user'; then
+	LogRed "This user does not exist: ${USER}"
+	exit
+fi
+
+Log "Paste and press Ctrl-D to save"
+KEY=$(cat)
+KEY=$(echo "${KEY}" | sed '/^$/d') # remove empty lines
+
+if ! echo "${KEY}" | grep -q "ssh-rsa "; then
+	LogRed "Key is missing \"ssh-rsa\"! Is it correct?"
+	exit
+fi
+
+if [ "${#KEY}" -lt 100 ]; then
+	LogRed "Key is less than 100 symbols long. Is it correct?"
+	exit
+fi
+
+if [ ! -f "${SSH_KEYS}/${USER}/${SSH_FILE}" ]; then
+	Log "Creating user config directory"
+	mkdir -p "${SSH_KEYS}/${USER}"
+
+	Log "Creating user config file"
+
+cat > "${SSH_KEYS}/${USER}/${SSH_FILE}" <<EOF
+${SSH_CONFIG_BANNER_START}
+
+${SSH_CONFIG_BANNER_END}
+EOF
+
+	Log "Fixing config permissions"
+	chown -R "${USER}":"${USER}" "${SSH_KEYS}/${USER}"
+	chmod 600 "${SSH_KEYS}/${USER}"
+	chmod 400 "${SSH_KEYS}/${USER}/${SSH_FILE}"
+fi
+
+KEYS=$(cat "${SSH_KEYS}/${USER}/${SSH_FILE}")
+
+set -- "$KEY"
+IFS=" "; declare -a KEY_PART=($*)
+
+if echo "${KEYS}" | grep -qF "${KEY_PART[1]}"; then
+	LogRed "This key already exists!"
+	exit
+fi
+
+KEYS=$(echo "${KEYS}" | sed "s/${SSH_CONFIG_BANNER_END}/%s/")
+
+FORMATTED_KEY="${SSH_KEY_BANNER_START}
+# ${NAME}
+${KEY}
+${SSH_KEY_BANNER_END}
+
+${SSH_CONFIG_BANNER_END}
+"
+
+NEW_KEYS=$(printf "${KEYS}" "$FORMATTED_KEY")
+
+echo "${NEW_KEYS}" > "${SSH_KEYS}/${USER}/${SSH_FILE}"
+
+echo ""
+LogGreen "Key added successfully"
+echo ""
