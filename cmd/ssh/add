@@ -3,7 +3,6 @@
 PREFIX='ssh'
 source "$(dirname $(dirname $(dirname "$(readlink -f "$0")")))/config"
 source "${LIB}/log"
-source "${LIB}/repeat"
 
 if [ -z "$SUDO_COMMAND" ]; then
 	mntusr=$(id -u) grpusr=$(id -g) sudo $0 $*
