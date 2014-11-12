@@ -6,14 +6,14 @@ source "${LIB}/log"
 source "${LIB}/repeat"
 
 if [ -z "$SUDO_COMMAND" ]; then
-	mntusr=$(id -u) grpusr=$(id -g) sudo $0 $*
+	mntusr=$(id -u) grpusr=$(id -g) sudo $0 "$@"
 	exit 0
 fi
 
 cd ${CMD}/ssh
 
 if [ "$1" != '-v' ]; then
-	USER=$1
+	USER="$1"
 else
 	USER=''
 fi
