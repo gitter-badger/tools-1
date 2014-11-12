@@ -12,10 +12,23 @@ if [ -z "$SUDO_COMMAND" ]; then
 	exit 0
 fi
 
+if [ "$1" != '-v' ]; then
+	USER=$1
+else
+	USER=''
+fi
+
 USERS=$(ls ${SSH_KEYS})
-USER=$1
+VERBOSE=false
 SPACE="          "
 DASHES=50
+
+for ARG in "$@"
+do
+    if [ "${ARG}" = "-v" ]; then
+    	VERBOSE=true
+    fi
+done
 
 function ExtractKeys
 {
@@ -33,16 +46,19 @@ function ExtractKeys
 
 	KEYS=$(echo "${KEYS}" | grep -v '# Key ')
 
+	i=1
 	while read -r ROW; do
 		if [ "$(echo ${ROW} | head -c 1)" = "#" ]; then
 			Log ""
-			Log "$(echo "${ROW}" | sed 's/^# //')"
-		else
+			Log "$i) $(echo "${ROW}" | sed 's/^# //')"
+			((i++))
+		elif $VERBOSE; then
 			echo "${ROW}"
 		fi
 	done <<< "${KEYS}"
 }
 
+# For all users
 if [ -z "${USER}" ]; then
 	Log "List of keys for all users"
 	Log $(Repeat "-" ${DASHES})
@@ -55,6 +71,7 @@ if [ -z "${USER}" ]; then
 	exit
 fi
 
+# For specific user
 if [ ! -f "${SSH_KEYS}/${USER}/${SSH_FILE}" ]; then
 	LogBrown "No configuration found for user ${USER}"
 	exit
