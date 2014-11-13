@@ -27,7 +27,13 @@ if [ -z "${PORT}" ]; then
 			PORT=22
 			break
 		elif [[ $PORT =~ $NUM_REGEX ]]; then
-			break
+			if ! netstat -tapen | grep -q ":${PORT}"; then
+				break
+			fi
+			if [ "${PORT}" = '22' ]; then
+				break
+			fi
+			LogBrown "This port is in use already"
 		fi
 	done
 fi
