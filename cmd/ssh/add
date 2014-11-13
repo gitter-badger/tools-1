@@ -72,6 +72,14 @@ EOF
 	chown -R "${USER}":"${USER}" "${SSH_KEYS}/${USER}"
 	chmod 600 "${SSH_KEYS}/${USER}"
 	chmod 400 "${CONFIG_FILE}"
+
+elif ! cat ${CONFIG_FILE} | grep -q "${SSH_CONFIG_BANNER_START}"; then
+cat >> "${CONFIG_FILE}" <<EOF
+
+${SSH_CONFIG_BANNER_START}
+
+${SSH_CONFIG_BANNER_END}
+EOF
 fi
 
 KEYS=$(cat "${CONFIG_FILE}")
