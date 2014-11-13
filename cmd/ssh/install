@@ -16,24 +16,89 @@ cd ${CMD}/ssh
 
 CheckIfInstalled
 
+if [ -z "${PORT}" ]; then
+	NUM_REGEX='^[0-9]+$'
+
+	while true; do
+		Log "SSH Port [22]: " true
+		read PORT
+
+		if [ -z "${PORT}" ]; then
+			PORT=22
+			break
+		elif [[ $PORT =~ $NUM_REGEX ]]; then
+			break
+		fi
+	done
+fi
+
+if [ -z "${DISABLE_PASS}" ]; then
+	while true; do
+		Log "Disable password authentication [y/n]: " true
+		read DISABLE_PASS
+
+		if [ "${DISABLE_PASS}" = "y" ] || [ "${DISABLE_PASS}" = "n" ]; then
+			break
+		fi
+	done
+fi
+
+if [ -z "${PERMIT_ROOT_LOGIN}" ]; then
+	ONE_TOW_THREE_REGEX='^[1-3]$'
+	while true; do
+		Log "Permit root user authentication"
+		Log "(1) yes; (2) with key only; (3) no: " true
+		read PERMIT_ROOT_LOGIN
+
+		if [[ $PERMIT_ROOT_LOGIN =~ $ONE_TOW_THREE_REGEX ]]; then
+			break
+		fi
+	done
+fi
+
 SSHD_CONFIG="/etc/ssh/sshd_config"
 
 Log "Backing up ssh configuration"
 cp "${SSHD_CONFIG}" "${SSHD_CONFIG}.bak"
 
-Log "Creating keys directory"
-mkdir "${SSH_KEYS}"
+if [ ! -d "${SSH_KEYS}" ]; then
+	Log "Creating keys directory"
+	mkdir "${SSH_KEYS}"
+fi
 chown root:root "${SSH_KEYS}"
 chmod 700 "${SSH_KEYS}"
 
 Log "Configuring ssh"
-sed -i 's/PermitRootLogin .*/PermitRootLogin without-password/' "${SSHD_CONFIG}"
+
+sed -i "s/Port.*/Port ${PORT}/" "${SSHD_CONFIG}"
+
+if [ "${DISABLE_PASS}" = "y" ]; then
+	sed -i 's/#\?PasswordAuthentication yes/PasswordAuthentication no/' "${SSHD_CONFIG}"
+fi
+
+case $PERMIT_ROOT_LOGIN in
+	1)
+		sed -i 's/PermitRootLogin .*/PermitRootLogin yes/' "${SSHD_CONFIG}"
+		;;
+	2)
+		sed -i 's/PermitRootLogin .*/PermitRootLogin without-password/' "${SSHD_CONFIG}"
+		;;
+	3)
+		sed -i 's/PermitRootLogin .*/PermitRootLogin no/' "${SSHD_CONFIG}"
+		;;
+esac
+
 sed -i 's/#AuthorizedKeysFile.*/AuthorizedKeysFile	\/etc\/ssh\/keys\/%u\/authorized_keys/' "${SSHD_CONFIG}"
+sed -i 's/#\?RSAAuthentication .*/RSAAuthentication yes/' "${SSHD_CONFIG}"
+sed -i 's/#\?PubkeyAuthentication .*/PubkeyAuthentication yes/' "${SSHD_CONFIG}"
 
 if [ -f ~/.ssh/"${SSH_FILE}" ]; then
 	Log "Found existing keys at ~/.ssh"
 	Log "Creating user config directory"
-	mkdir -p "${SSH_KEYS}/${USERNAME}"
+
+	if [ ! -d "${SSH_KEYS}/${USERNAME}" ]; then
+		mkdir -p "${SSH_KEYS}/${USERNAME}"
+	fi
 
 	Log "Creating user keys based on existing ones"
 	cp ~/.ssh/"${SSH_FILE}" "${SSH_KEYS}/${USERNAME}"
