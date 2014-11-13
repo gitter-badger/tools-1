@@ -15,9 +15,17 @@ USER="$1"
 NUMBER="$2"
 
 if [ -z "${USER}" ]; then
-	LogRed "Missing params! Required:"
-	LogRed "${CMDNAME} ssh remove [system user]"
-	exit
+	while true; do
+		Log "System user: " true
+		read USER
+
+		SYS_UID="$(id -g ${USER} 2>&1)"
+		if echo "${SYS_UID}" | grep -q 'no such user'; then
+			LogBrown "This user does not exist"
+		else
+			break
+		fi
+	done
 fi
 
 if [ -z "$NUMBER" ]; then
