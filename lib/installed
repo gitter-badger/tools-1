@@ -8,8 +8,14 @@ function CheckIfInstalled {
 }
 
 function MarkInstalled {
-	if [ ! -d "tmp" ]; then
-		mkdir "tmp"
-	fi
-	touch "tmp/installed"
+    if [ ! -d "tmp" ]; then
+        mkdir "tmp"
+    fi
+    touch "tmp/installed"
+}
+
+function MarkUninstalled {
+    if [ -f "tmp/installed" ]; then
+    	rm "tmp/installed"
+    fi
 }

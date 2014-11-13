@@ -1,8 +1,8 @@
 #!/bin/bash
 
 if [ -z "$SUDO_COMMAND" ]; then
-    mntusr=$(id -u) grpusr=$(id -g) sudo $0 "$@"
-    exit 0
+	mntusr=$(id -u) grpusr=$(id -g) sudo $0 "$@"
+	exit 0
 fi
 
 clear
@@ -10,15 +10,47 @@ clear
 PREFIX='ssh'
 source "$(dirname $(dirname $(dirname "$(readlink -f "$0")")))/config"
 source "${LIB}/log"
+source "${LIB}/installed"
 
 cd ${CMD}/ssh
 
 CheckIfInstalled
 
+SSHD_CONFIG="/etc/ssh/sshd_config"
 
+Log "Backing up ssh configuration"
+cp "${SSHD_CONFIG}" "${SSHD_CONFIG}.bak"
+
+Log "Creating keys directory"
+mkdir "${SSH_KEYS}"
+chown root:root "${SSH_KEYS}"
+chmod 700 "${SSH_KEYS}"
+
+Log "Configuring ssh"
+sed -i 's/PermitRootLogin .*/PermitRootLogin without-password/' "${SSHD_CONFIG}"
+sed -i 's/#AuthorizedKeysFile.*/AuthorizedKeysFile	\/etc\/ssh\/keys\/%u\/authorized_keys/' "${SSHD_CONFIG}"
+
+if [ -f ~/.ssh/"${SSH_FILE}" ]; then
+	Log "Found existing keys at ~/.ssh"
+	Log "Creating user config directory"
+	mkdir -p "${SSH_KEYS}/${USERNAME}"
+
+	Log "Creating user keys based on existing ones"
+	cp ~/.ssh/"${SSH_FILE}" "${SSH_KEYS}/${USERNAME}"
+
+	Log "Fixing keys permissions"
+	chown -R "${USERNAME}":"${USERNAME}" "${SSH_KEYS}/${USERNAME}"
+	chmod 600 "${SSH_KEYS}/${USERNAME}"
+	chmod 400 "${SSH_KEYS}/${USERNAME}/${SSH_FILE}"
+fi
+
+Log "Restarting ssh"
+service ssh restart 2>&1 > /dev/null
 
 MarkInstalled
 
-echo ""
 LogGreen "Installed successfully"
+LogRed "Before you logout try to login through ssh with another tab!"
+LogRed "If you cannot login reverse the installation by executing:"
+LogBlue "${CMDNAME} ssh uninstall"
 echo ""
