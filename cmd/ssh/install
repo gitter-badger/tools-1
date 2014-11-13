@@ -17,7 +17,7 @@ cd ${CMD}/ssh
 CheckIfInstalled
 
 if [ -z "${PORT}" ]; then
-	NUM_REGEX='^[0-9]+$'
+	PORT_REGEX='^[0-9]{2,5}$'
 
 	while true; do
 		Log "SSH Port [22]: " true
@@ -26,7 +26,7 @@ if [ -z "${PORT}" ]; then
 		if [ -z "${PORT}" ]; then
 			PORT=22
 			break
-		elif [[ $PORT =~ $NUM_REGEX ]]; then
+		elif [[ $PORT =~ $PORT_REGEX ]]; then
 			if ! netstat -tapen | grep -q ":${PORT}"; then
 				break
 			fi
