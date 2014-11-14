@@ -1,37 +1,50 @@
 #!/bin/bash
 
-SOURCE="${BASH_SOURCE[0]}"
-while [ -h "$SOURCE" ]; do
-	DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
-	SOURCE="$(readlink "$SOURCE")"
-	[[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
-done
+################
+# Command name #
+################
+# If you change this value the commands will be called with the new name
+# eg: if CMDNAME="commands"
+# istead of "tools nginx site"
+# it will be "commands nginx site"
+#
+# Note: if you change the name after the installation
+# the change will not take effect
 
 CMDNAME="tools"
 
-# Main directories
+
+BINDIR="/usr/local/bin"
+INSTALLDIR="/usr/local/lib"
+
+####################
+# Main directories #
+####################
+
 TOOLS="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 CMD="${TOOLS}/cmd"
 LIB="${TOOLS}/lib"
 SRC="${TOOLS}/src"
 
-# Commands configs
+####################
+# Commands configs #
+####################
 
 USERNAME=`who am i | awk '{print $1}'`
 
-BINDIR="/usr/local/bin"
-INSTALLDIR="/usr/local/lib"
-
+# apache && nginx
 WEBDIR="/srv/www"
 WEBDIR_PUBLIC="www/public"
-
 GITDIR="/srv/git"
 
+# mail
 MAILDIR="/srv/mail"
 MAILUSER="vmail"
 
+# ftp
 FTPUSER="ftp"
 
+# ssh
 SSH_KEYS="/etc/ssh/keys"
 SSH_FILE="authorized_keys"
 SSH_CONFIG_BANNER_START="# TOOLS AUTOMATIC MANAGEMENT START"
