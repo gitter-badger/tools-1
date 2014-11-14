@@ -21,7 +21,7 @@ INSTALLDIR="/usr/local/lib"
 # Main directories #
 ####################
 
-TOOLS="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+TOOLS=$(dirname "$(readlink -f "$0")")
 CMD="${TOOLS}/cmd"
 LIB="${TOOLS}/lib"
 SRC="${TOOLS}/src"
