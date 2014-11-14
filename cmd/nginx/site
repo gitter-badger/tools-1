@@ -1,10 +1,10 @@
 #!/bin/bash
 
 PREFIX='site'
-source "$(dirname $(dirname $(dirname "$(readlink -f "$0")")))/config"
+source "config"
 source "${LIB}/log"
 
-cd ${CMD}/apache
+cd ${CMD}/nginx
 
 DOMAIN="$1"
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 PREFIX='ftp'
-source "$(dirname $(dirname $(dirname "$(readlink -f "$0")")))/config"
+source "config"
 source "${LIB}/log"
 source "${CMD}/ftp/tmp/mysql"
 

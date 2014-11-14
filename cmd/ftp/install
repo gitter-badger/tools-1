@@ -3,7 +3,7 @@
 PREFIX='ftp'
 COLWIDTH=30
 MAXWIDTH=$(($COLWIDTH * 2 + 7))
-source "$(dirname $(dirname $(dirname "$(readlink -f "$0")")))/config"
+source "config"
 source "${LIB}/log"
 source "${LIB}/installed"
 
