@@ -4,11 +4,6 @@ PREFIX='ssh'
 source "$(dirname $(dirname $(dirname "$(readlink -f "$0")")))/config"
 source "${LIB}/log"
 
-if [ -z "$SUDO_COMMAND" ]; then
-	mntusr=$(id -u) grpusr=$(id -g) sudo $0 "$@"
-	exit 0
-fi
-
 cd ${CMD}/ssh
 
 USER="$1"

@@ -1,10 +1,17 @@
 #!/bin/bash
 
+if [ -z "$SUDO_COMMAND" ]; then
+	mntusr=$(id -u) grpusr=$(id -g) sudo $0 "$@"
+	exit 0
+fi
+
 PREFIX='tools'
 
 DIR=$(dirname "$(readlink -f "$0")")
-source "${DIR}/config"
-source "${DIR}/lib/log"
+cd "${DIR}"
+
+source "config"
+source "lib/log"
 
 if [ ! -h "${BINDIR}/${CMDNAME}" ]; then
 	LogRed "${CMDNAME} is not installed! Run ./install"
@@ -61,4 +68,4 @@ fi
 
 # Invoke command
 
-bash "${CMD}/$1/$2" "${@:3}"
+sudo bash "${CMD}/$1/$2" "${@:3}"
