@@ -3,11 +3,14 @@
 PREFIX='ssh'
 source "config"
 source "${LIB}/log"
+source "${LIB}/installed"
 
 cd ${CMD}/ssh
 
 USER="$1"
 NAME="$2"
+
+RequireInstall
 
 if [ -z "$USER" ]; then
 	while true; do

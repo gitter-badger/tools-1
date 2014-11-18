@@ -7,7 +7,7 @@ source "${LIB}/installed"
 
 cd ${CMD}/ssh
 
-CheckIfInstalled
+ProtectDoubleInstall
 
 if [ -z "${PORT}" ]; then
 	PORT_REGEX='^[0-9]{2,5}$'

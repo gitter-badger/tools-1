@@ -1,16 +1,16 @@
 #!/bin/bash
 
 PREFIX='ftp'
-COLWIDTH=30
-MAXWIDTH=$(($COLWIDTH * 2 + 7))
 source "config"
 source "${LIB}/log"
 source "${LIB}/installed"
 
 cd ${CMD}/ftp
 
-CheckIfInstalled
+ProtectDoubleInstall
 
+COLWIDTH=30
+MAXWIDTH=$(($COLWIDTH * 2 + 7))
 CONFIRMED=false
 
 function CollectData {

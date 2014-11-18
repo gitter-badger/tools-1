@@ -1,8 +1,15 @@
 #!/bin/bash
 
-function CheckIfInstalled {
-	if [ -f "tmp/installed" ]; then
-		LogRed "Already installed!"
+function ProtectDoubleInstall {
+    if [ -f "tmp/installed" ]; then
+        LogRed "Already installed!"
+        exit
+    fi
+}
+
+function RequireInstall {
+	if [ ! -f "tmp/installed" ]; then
+		LogRed "This software is not installed"
 		exit
 	fi
 }

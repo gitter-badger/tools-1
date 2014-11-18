@@ -3,9 +3,12 @@
 PREFIX='ssh'
 source "config"
 source "${LIB}/log"
+source "${LIB}/installed"
 source "${LIB}/repeat"
 
 cd ${CMD}/ssh
+
+RequireInstall
 
 if [ "$1" != '-v' ]; then
 	USER="$1"

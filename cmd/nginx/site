@@ -3,8 +3,11 @@
 PREFIX='site'
 source "config"
 source "${LIB}/log"
+source "${LIB}/installed"
 
 cd ${CMD}/nginx
+
+RequireInstall
 
 DOMAIN="$1"
 

@@ -7,7 +7,7 @@ source "${LIB}/installed"
 
 cd ${CMD}/nginx
 
-CheckIfInstalled
+ProtectDoubleInstall
 
 MYSQL=false
 

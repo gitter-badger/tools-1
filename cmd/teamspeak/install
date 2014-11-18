@@ -14,7 +14,7 @@ source "${LIB}/installed"
 
 cd ${CMD}/teamspeak
 
-CheckIfInstalled
+ProtectDoubleInstall
 
 Log "Installing TeamSpeak 3 server to ${INSTALLDIR}/ts"
 if [ -n "`uname -m | grep 64`" ]; then

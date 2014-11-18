@@ -7,7 +7,7 @@ source "${LIB}/installed"
 
 cd ${CMD}/apache
 
-CheckIfInstalled
+ProtectDoubleInstall
 
 MYSQL=false
 

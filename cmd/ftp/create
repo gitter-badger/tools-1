@@ -3,7 +3,10 @@
 PREFIX='ftp'
 source "config"
 source "${LIB}/log"
+source "${LIB}/installed"
 source "${CMD}/ftp/tmp/mysql"
+
+RequireInstall
 
 if [ -z "${FTP_MYSQL_DATABASE}" ] || [ -z "${FTP_MYSQL_USERNAME}" ]; then
 	LogRed "FTP not configured. Missing MySQL details (${CMD}/ftp/tmp/mysql)"

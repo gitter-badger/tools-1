@@ -7,7 +7,7 @@ source "${LIB}/installed"
 
 cd ${CMD}/mail
 
-CheckIfInstalled
+ProtectDoubleInstall
 
 COLWIDTH=30
 MAXWIDTH=$(($COLWIDTH * 2 + 7))

@@ -3,8 +3,11 @@
 PREFIX='ssh'
 source "config"
 source "${LIB}/log"
+source "${LIB}/installed"
 
 cd ${CMD}/ssh
+
+RequireInstall
 
 USER="$1"
 NUMBER="$2"
