@@ -6,6 +6,8 @@ source "${LIB}/log"
 source "${LIB}/installed"
 source "${CMD}/mail/tmp/mysql"
 
+cd ${CMD}/mail
+
 RequireInstall
 
 if [ -z "${MAIL_MYSQL_DATABASE}" ] || [ -z "${MAIL_MYSQL_USERNAME}" ]; then

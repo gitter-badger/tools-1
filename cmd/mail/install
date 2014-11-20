@@ -496,15 +496,16 @@ MAIL_MYSQL_DATABASE="${MYSQL_DATABASE}"
 MAIL_MYSQL_USERNAME="${MYSQL_USER}"
 EOF
 
-bash ./create "${EMAIL_EMAIL}" "${EMAIL_PASS}" "${EMAIL_NAME}"
+MarkInstalled
+
+cd ${TOOLS}
+bash ${CMD}/mail/create "${EMAIL_EMAIL}" "${EMAIL_PASS}" "${EMAIL_NAME}"
 
 Log "Restarting services for changes to take effect"
 echo ""
 
 service postfix restart
 service dovecot restart
-
-MarkInstalled
 
 echo ""
 LogGreen "Mail server successfully installed!"
