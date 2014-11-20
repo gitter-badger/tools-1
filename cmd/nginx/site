@@ -111,7 +111,7 @@ if [ ! -f "${CONF_VHOST_AV}" ]; then
 		echo "	location ~ \.php$ {"
 		echo "		fastcgi_pass unix:${FPM_SOCKET};"
 		echo "		fastcgi_index index.php;"
-		echo "		fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;"
+		echo "		fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;"
 		echo "		include fastcgi_params;"
 		echo "	}"
 		echo "}"
