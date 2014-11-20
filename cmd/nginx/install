@@ -52,8 +52,6 @@ apt-get update > /dev/null
 Log "Installing nginx"
 apt-get install -y -q nginx php5-fpm php5-mysql php5-curl php5-mcrypt php5-cli php5-gd php5-intl > /dev/null
 
-
-
 Log "Restarting nginx"
 service nginx restart > /dev/null
 
@@ -74,6 +72,10 @@ if [ ${MYSQL} == true ]; then
 	LogGreen "MySQL installed successfully"
 	LogBrown "Suggestion: secure the database with mysql_secure_installation"
 fi
+
+Log "Installing Composer"
+curl -sS https://getcomposer.org/installer | php
+mv composer.phar /usr/local/bin/composer
 
 Log "Installing git"
 apt-get install -y -q git > /dev/null

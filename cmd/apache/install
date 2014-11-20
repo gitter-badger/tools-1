@@ -90,6 +90,10 @@ if [ ${MYSQL} == true ]; then
 	LogBrown "Suggestion: secure the database with mysql_secure_installation"
 fi
 
+Log "Installing Composer"
+curl -sS https://getcomposer.org/installer | php
+mv composer.phar /usr/local/bin/composer
+
 Log "Installing git"
 apt-get install -y -q git > /dev/null
 
