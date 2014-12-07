@@ -338,7 +338,7 @@ cat > /etc/dovecot/dovecot-sql.conf.ext <<EOF
 driver = mysql
 connect = host=127.0.0.1 user=${MYSQL_USER} password=${MYSQL_PASS} dbname=${MYSQL_DATABASE}
 default_pass_scheme = SHA512-CRYPT
-password_query = SELECT emails.user, emails.password FROM emails LEFT JOIN domains ON emails.domain_id = domains.id WHERE emails.user='%n' AND domains.domain = '%d' AND emails.active = '1'
+password_query = SELECT CONCAT(emails.user, '@', domains.domain) AS user, emails.password FROM emails LEFT JOIN domains ON emails.domain_id = domains.id WHERE emails.user='%n' AND domains.domain = '%d' AND emails.active = '1'
 EOF
 
 mv /etc/dovecot/conf.d/10-master.conf{,.bak}
