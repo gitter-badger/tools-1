@@ -3,7 +3,7 @@ Ubuntu Server Tools
 
 Command Line App to manage Ubuntu **v14.04 LTS** servers
 
-# How to use
+## How to use
 
 ### Install
 
@@ -22,7 +22,7 @@ tools
 
 Calling tools without params will print the help information.
 
-# Commands
+## Commands
 
 ### apache / nginx
 
