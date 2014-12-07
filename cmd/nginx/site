@@ -85,37 +85,37 @@ else
 fi
 
 if [ ! -f "${CONF_VHOST_AV}" ]; then
-	{
-		echo "server {"
-		echo "	server_name  www.${DOMAIN};"
-		echo "	rewrite ^(.*) http://${DOMAIN}\$1 permanent;"
-		echo "}"
-		echo "server {"
-		echo "	listen 80;"
-		echo "	server_name ${DOMAIN};"
-		echo "	root ${SITE_PUBLIC};"
-		echo "	index index.html index.php;"
-		echo "	charset utf-8;"
-		echo ""
-		echo "	access_log ${SITE}/logs/access.log combined;"
-		echo "	error_log  ${SITE}/logs/error.log error;"
-		echo "	error_page 404 /index.php;"
-		echo ""
-		echo "	location / {"
-		echo "		try_files \$uri \$uri/ /index.php?\$query_string;"
-		echo "	}"
-		echo ""
-		echo "	location = /favicon.ico { access_log off; log_not_found off; }"
-		echo "	location = /robots.txt  { access_log off; log_not_found off; }"
-		echo ""
-		echo "	location ~ \.php$ {"
-		echo "		fastcgi_pass unix:${FPM_SOCKET};"
-		echo "		fastcgi_index index.php;"
-		echo "		fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;"
-		echo "		include fastcgi_params;"
-		echo "	}"
-		echo "}"
-	} > "$CONF_VHOST_AV"
+cat > "$CONF_VHOST_AV" <<EOF
+server {
+	server_name  www.${DOMAIN};
+	rewrite ^(.*) http://${DOMAIN}\$1 permanent;
+}
+server {
+	listen 80;
+	server_name ${DOMAIN};
+	root ${SITE_PUBLIC};
+	index index.html index.php;
+	charset utf-8;
+
+	access_log ${SITE}/logs/access.log combined;
+	error_log  ${SITE}/logs/error.log error;
+	error_page 404 /index.php;
+
+	location / {
+		try_files \$uri \$uri/ /index.php?\$query_string;
+	}
+
+	location = /favicon.ico { access_log off; log_not_found off; }
+	location = /robots.txt  { access_log off; log_not_found off; }
+
+	location ~ \.php$ {
+		fastcgi_pass unix:${FPM_SOCKET};
+		fastcgi_index index.php;
+		fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
+		include fastcgi_params;
+	}
+}
+EOF
 	Log "Vhost configuration file created"
 fi
 

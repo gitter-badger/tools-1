@@ -82,29 +82,30 @@ else
 fi
 
 if [ ! -f "${CONF_VHOST}" ]; then
-	{
-		echo "<VirtualHost *:80>"
-		echo "	DocumentRoot '${SITE_PUBLIC}'"
-		echo "	ServerName ${DOMAIN}"
-		echo "	ServerAlias www.${DOMAIN}"
-		echo ""
-		echo "	<Directory ${SITE_PUBLIC}>"
-		echo "		Options FollowSymLinks"
-		echo "		AllowOverride All"
-		echo "		Require all granted"
-		echo "	</Directory>"
-		echo ""
-		echo "	<IfModule mod_fastcgi.c>"
-		echo "		AddHandler php5-fcgi .php"
-		echo "		Action php5-fcgi /php5-fcgi-${DOMAIN}"
-		echo "		Alias /php5-fcgi-${DOMAIN} /usr/lib/cgi-bin/php5-fcgi-${DOMAIN}"
-		echo "		FastCgiExternalServer /usr/lib/cgi-bin/php5-fcgi-${DOMAIN} -socket ${FPM_SOCKET} -pass-header Authorization"
-		echo "	</IfModule>"
-		echo ""
-		echo "	ErrorLog ${SITE}/logs/error.log"
-		echo "	CustomLog ${SITE}/logs/access.log combined"
-		echo "</VirtualHost>"
-	} > "$CONF_VHOST"
+cat > "$CONF_VHOST" <<EOF
+<VirtualHost *:80>
+	DocumentRoot '${SITE_PUBLIC}'
+	ServerName ${DOMAIN}
+	ServerAlias www.${DOMAIN}
+
+	<Directory ${SITE_PUBLIC}>
+		Options FollowSymLinks
+		AllowOverride All
+		Require all granted
+	</Directory>
+
+	<IfModule mod_fastcgi.c>
+		AddHandler php5-fcgi .php
+		Action php5-fcgi /php5-fcgi-${DOMAIN}
+		Alias /php5-fcgi-${DOMAIN} /usr/lib/cgi-bin/php5-fcgi-${DOMAIN}
+		FastCgiExternalServer /usr/lib/cgi-bin/php5-fcgi-${DOMAIN} -socket ${FPM_SOCKET} -pass-header Authorization
+	</IfModule>
+
+	ErrorLog ${SITE}/logs/error.log
+	CustomLog ${SITE}/logs/access.log combined
+</VirtualHost>
+EOF
+
 	Log "Vhost configuration file created"
 fi
 
