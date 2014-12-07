@@ -24,6 +24,13 @@ Calling tools without params will print the help information.
 
 # Commands
 
+### apache
+
+Installs Apache2 server, php5-fpm, Composer, MySQL (optional), Sendmail.
+Controls Apache2 virtual hosts, git repositories and git deployment.
+
+After creating a virtual host the website can be deployed by pushing to the git repository with branch **deploy**
+
 ### bash
 
 The following command colorize the bash terminal and adds important aliases.
