@@ -17,5 +17,7 @@ cd tools
 
 # Help
 
-```tools```
+```
+tools
+```
 Calling tools without params will print the help information.
