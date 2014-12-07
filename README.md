@@ -46,3 +46,7 @@ Creates virtual FTP users and sets chroot environment.
 
 Installs **Postfix, Dovecot** and **MySQL** services.
 Creates email accounts and aliases.
+
+### ssh
+
+This command is a tool to easily manage ssh keys for system users.
