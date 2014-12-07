@@ -26,8 +26,8 @@ Calling tools without params will print the help information.
 
 ### apache / nginx
 
-The command installs **Apache2 / Nginx server, php5-fpm, Composer, MySQL** *(optional)*, **sendmail**.
-The command also creates virtual hosts, git repositories and git automatic deployment for each website.
+Installs **Apache2 / Nginx server, php5-fpm, Composer, MySQL** *(optional)*, **sendmail**.
+Also creates virtual hosts, git repositories and git automatic deployment for each website.
 
 After creating a virtual host the website can be deployed by pushing to the git repository with branch `deploy`.
 Each website has its own system user and the php5-fpm uses this user to run the php processes.
@@ -35,9 +35,14 @@ The git repository is available at the home directory of this system user at `~/
 
 ### bash
 
-The following command colorize the bash terminal and adds important aliases.
+Colorizes the bash terminal and adds important aliases.
 
 ### ftp
 
-The command installs **Pure FTP** and **MySQL**.
-It creates virtual FTP users and sets chroot environment.
+Installs **Pure FTP** and **MySQL**.
+Creates virtual FTP users and sets chroot environment.
+
+### mail
+
+Installs **Postfix, Dovecot** and **MySQL** services.
+Creates email accounts and aliases.
