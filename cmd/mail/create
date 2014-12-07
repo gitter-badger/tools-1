@@ -108,7 +108,7 @@ fi
 QUERY="
 INSERT INTO ${MAIL_MYSQL_DATABASE}.emails (domain_id, name, user, password)
 	VALUES
-('${DOMAIN_ID}', '${NAME}', '${EMAIL}', ENCRYPT('${PASSWORD}', CONCAT('\$6\$', SUBSTRING(SHA(RAND()), -16))));
+('${DOMAIN_ID}', '${NAME}', '${USER}', ENCRYPT('${PASSWORD}', CONCAT('\$6\$', SUBSTRING(SHA(RAND()), -16))));
 "
 while true; do
 	RESULT=`MYSQL_PWD=${MAIL_MYSQL_PASSWORD} mysql -u ${MAIL_MYSQL_USERNAME} -e "${QUERY}" 2>&1`
