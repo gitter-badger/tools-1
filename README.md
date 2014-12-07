@@ -5,7 +5,7 @@ Command Line App to manage Ubuntu **v14.04 LTS** servers
 
 # How to use
 
-## Install
+### Install
 
 ```bash
 apt-get install -y git
@@ -14,11 +14,16 @@ git clone https://github.com/IvanDokov/tools
 cd tools
 ./install
 ```
-
-## Help
+### Help
 
 ```
 tools
 ```
 
 Calling tools without params will print the help information.
+
+# Commands
+
+### bash
+
+The following command colorize the bash terminal and adds important aliases.
