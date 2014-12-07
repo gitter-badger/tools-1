@@ -50,3 +50,7 @@ Creates email accounts and aliases.
 ### ssh
 
 This command is a tool to easily manage ssh keys for system users.
+
+### teamspeak
+
+Installs TeamSpeak 3 server.
