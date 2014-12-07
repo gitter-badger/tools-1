@@ -74,9 +74,7 @@ if [ ! -z "${MAIL_MYSQL_PASSWORD}" ]; then
 	if echo $MYSQLPASSCHECK | grep -q "ERROR 1045"; then
 		MAIL_MYSQL_PASSWORD=
 	fi
-fi
-
-if [ -z "${MAIL_MYSQL_PASSWORD}" ]; then
+else
 	PASSTRY=1
 	while true; do
 		Log "Enter password for MySQL user [${MAIL_MYSQL_USERNAME}]: " true

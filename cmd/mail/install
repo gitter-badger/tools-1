@@ -477,9 +477,10 @@ CREATE TABLE IF NOT EXISTS emails (
 	FOREIGN KEY (domain_id) REFERENCES domains(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-INSERT INTO domains (domain) VALUES ('localhost'), ('localhost.localdomain'), ('${EMAIL_DOMAIN}');
+INSERT INTO domains (domain) VALUES ('localhost'), ('${EMAIL_DOMAIN}');
 
-INSERT INTO aliases (domain_id, source, destination) VALUES ('1', '@localhost.localdomain', '@localhost'), ('1', '@localhost', '${EMAIL_EMAIL}');
+INSERT INTO aliases (domain_id, source, destination) VALUES ('1', '@localhost', '${EMAIL_EMAIL}');
+INSERT INTO aliases (domain_id, source, destination) VALUES ('1', 'hostmaster@${EMAIL_DOMAIN}', '${EMAIL_EMAIL}');
 EOF
 
 Log "Setting up ${MYSQL_DATABASE} database, user ${MYSQL_USER} and default email address ${EMAIL_EMAIL} for ${EMAIL_NAME}"
@@ -494,7 +495,10 @@ fi
 cat > tmp/mysql <<EOF
 MAIL_MYSQL_DATABASE="${MYSQL_DATABASE}"
 MAIL_MYSQL_USERNAME="${MYSQL_USER}"
+MAIL_MYSQL_PASSWORD="${MYSQL_PASS}"
 EOF
+
+chmod 400 tmp/mysql
 
 MarkInstalled
 
