@@ -26,10 +26,12 @@ Calling tools without params will print the help information.
 
 ### apache
 
-Installs Apache2 server, php5-fpm, Composer, MySQL (optional), Sendmail.
-Controls Apache2 virtual hosts, git repositories and git deployment.
+The command installs **Apache2 server, php5-fpm, Composer, MySQL** *(optional)*, **sendmail**.
+The command also creates virtual hosts, git repositories and git automatic deployment for each website.
 
-After creating a virtual host the website can be deployed by pushing to the git repository with branch **deploy**
+After creating a virtual host the website can be deployed by pushing to the git repository with branch **deploy**.
+Each website has its own system user and the php5-fpm uses this user to spawn processes.
+The git repository is available at the home directory of this system user at `~/git`
 
 ### bash
 
