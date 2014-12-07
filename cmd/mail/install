@@ -459,7 +459,7 @@ CREATE TABLE IF NOT EXISTS aliases (
 	source varchar(100) NOT NULL,
 	destination text NOT NULL,
 
-	PRIMARY KEY (id),
+	PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS emails (
