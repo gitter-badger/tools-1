@@ -106,7 +106,7 @@ if [ -z "$DOMAIN_ID" ]; then
 fi
 
 QUERY="
-INSERT INTO ${MAIL_MYSQL_DATABASE}.emails (domain_id, name, email, password)
+INSERT INTO ${MAIL_MYSQL_DATABASE}.emails (domain_id, name, user, password)
 	VALUES
 ('${DOMAIN_ID}', '${NAME}', '${EMAIL}', ENCRYPT('${PASSWORD}', CONCAT('\$6\$', SUBSTRING(SHA(RAND()), -16))));
 "
