@@ -6,6 +6,8 @@ source "${LIB}/log"
 source "${LIB}/installed"
 source "${CMD}/ftp/tmp/mysql"
 
+cd ${CMD}/ftp
+
 RequireInstall
 
 if [ -z "${FTP_MYSQL_DATABASE}" ] || [ -z "${FTP_MYSQL_USERNAME}" ]; then
@@ -81,29 +83,14 @@ while true; do
 done
 
 chown "${SYS_USER}":"${SYS_USER}" "${CHROOTPATH}"
+chmod 750 "${CHROOTPATH}"
 
 QUERY="INSERT INTO \`${FTP_MYSQL_DATABASE}\`.\`accounts\` (\`User\`, \`Status\`, \`Password\`, \`IPAccess\`, \`Dir\`, \`Uid\`, \`Gid\`, \`ULBandwidth\`, \`DLBandwidth\`, \`QuotaSize\`, \`QuotaFiles\`) VALUES ('${FTP_USERNAME}', '1', MD5('${FTP_PASSWORD}'), '*', '${CHROOTPATH}', '${SYS_UID}', '${SYS_GID}', '0', '0', '0', '0');"
 
-PASSTRY=0
+RESULT=`MYSQL_PWD=${FTP_MYSQL_PASSWORD} mysql -u ${FTP_MYSQL_USERNAME} -e "${QUERY}" 2>&1`
 
-Log "Enter password for MySQL user ${FTP_MYSQL_USERNAME}"
-while true; do
-	RESULT=`mysql -u ${FTP_MYSQL_USERNAME} -p -e "${QUERY}" 2>&1`
-
-	if echo $RESULT | grep -q "ERROR 1045"; then
-		if (( $PASSTRY >= 2 )); then
-			LogRed "Three wrong authentication attempts. Exiting..."
-			exit
-		fi
-
-		PASSTRY=$((PASSTRY+1))
-
-		LogBrown "Wrong MySQL password. Please try again"
-	elif echo "${RESULT}" | grep -q "Duplicate entry '${FTP_USERNAME}'"; then
-		LogRed "This account already exists"
-		break
-	else
-		LogGreen "FTP user created: ${FTP_USERNAME}"
-		break
-	fi
-done
+if echo "${RESULT}" | grep -q "Duplicate entry '${FTP_USERNAME}'"; then
+	LogRed "This account already exists"
+else
+	LogGreen "FTP user created: ${FTP_USERNAME}"
+fi

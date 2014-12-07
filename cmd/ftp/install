@@ -210,7 +210,10 @@ fi
 cat > tmp/mysql <<EOF
 FTP_MYSQL_DATABASE="${MYSQL_DATABASE}"
 FTP_MYSQL_USERNAME="${MYSQL_USER}"
+FTP_MYSQL_PASSWORD="${MYSQL_PASS}"
 EOF
+
+chmod 400 tmp/mysql
 
 Log "Restarting services for changes to take effect"
 
