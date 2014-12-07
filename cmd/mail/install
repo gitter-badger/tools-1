@@ -289,7 +289,7 @@ user = ${MYSQL_USER}
 password = ${MYSQL_PASS}
 hosts = 127.0.0.1
 dbname = ${MYSQL_DATABASE}
-query = SELECT 1 FROM emails WHERE email='%s'
+query = SELECT 1 FROM emails LEFT JOIN domains ON emails.domain_id = domains.id WHERE emails.user='%u' AND domains.domain = '%d'
 EOF
 
 chmod 700 /etc/postfix/mysql/*
@@ -338,7 +338,7 @@ cat > /etc/dovecot/dovecot-sql.conf.ext <<EOF
 driver = mysql
 connect = host=127.0.0.1 user=${MYSQL_USER} password=${MYSQL_PASS} dbname=${MYSQL_DATABASE}
 default_pass_scheme = SHA512-CRYPT
-password_query = SELECT email as user, password FROM emails WHERE email='%u' AND active = '1'
+password_query = SELECT emails.user, emails.password FROM emails LEFT JOIN domains ON emails.domain_id = domains.id WHERE emails.user='%n' AND domains.domain = '%d' AND emails.active = '1'
 EOF
 
 mv /etc/dovecot/conf.d/10-master.conf{,.bak}
@@ -456,7 +456,6 @@ CREATE TABLE IF NOT EXISTS domains (
 
 CREATE TABLE IF NOT EXISTS aliases (
 	id INT NOT NULL AUTO_INCREMENT,
-	domain_id INT NOT NULL,
 	source varchar(100) NOT NULL,
 	destination text NOT NULL,
 
@@ -468,7 +467,7 @@ CREATE TABLE IF NOT EXISTS emails (
 	id INT NOT NULL AUTO_INCREMENT,
 	domain_id INT NOT NULL,
 	name VARCHAR(120) NOT NULL,
-	email VARCHAR(120) NOT NULL,
+	user VARCHAR(120) NOT NULL,
 	password VARCHAR(106) NOT NULL,
 	active TINYINT(1) NOT NULL DEFAULT "1",
 
@@ -479,8 +478,8 @@ CREATE TABLE IF NOT EXISTS emails (
 
 INSERT INTO domains (domain) VALUES ('localhost'), ('${EMAIL_DOMAIN}');
 
-INSERT INTO aliases (domain_id, source, destination) VALUES ('1', '@localhost', '${EMAIL_EMAIL}');
-INSERT INTO aliases (domain_id, source, destination) VALUES ('1', 'hostmaster@${EMAIL_DOMAIN}', '${EMAIL_EMAIL}');
+INSERT INTO aliases (source, destination) VALUES ('@localhost', '${EMAIL_EMAIL}');
+INSERT INTO aliases (source, destination) VALUES ('hostmaster@${EMAIL_DOMAIN}', '${EMAIL_EMAIL}');
 EOF
 
 Log "Setting up ${MYSQL_DATABASE} database, user ${MYSQL_USER} and default email address ${EMAIL_EMAIL} for ${EMAIL_NAME}"
