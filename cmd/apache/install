@@ -97,8 +97,13 @@ mv composer.phar /usr/local/bin/composer
 Log "Installing git"
 apt-get install -y -q git > /dev/null
 
-Log "Installing sendmail"
-apt-get install -y -q sendmail > /dev/null
+POSTFIX_STATUS=$(service postfix status)
+if echo ${POSTFIX_STATUS} | grep -q 'not installed'; then
+	Log "Installing sendmail"
+	apt-get install -y -q sendmail > /dev/null
+else
+	Log "Skipping sendmail, Postfix is installed"
+fi
 
 MarkInstalled
 
