@@ -1,0 +1,128 @@
+#!/bin/bash
+
+PREFIX='mail'
+source "config"
+source "${LIB}/log"
+source "${LIB}/installed"
+source "${CMD}/mail/tmp/mysql"
+
+cd ${CMD}/mail
+
+RequireInstall
+
+if [ -z "${MAIL_MYSQL_DATABASE}" ] || [ -z "${MAIL_MYSQL_USERNAME}" ] || [ -z "${MAIL_MYSQL_PASSWORD}" ]; then
+	LogRed "Mail not configured. Missing MySQL details (${CMD}/mail/tmp/mysql)"
+	exit
+fi
+
+function ShowMenu {
+	Log "Select an option:"
+	Log "1) List"
+	Log "2) Add"
+	Log "3) Edit"
+	Log "4) Delete"
+}
+
+function Query {
+	MYSQL_PWD=${MAIL_MYSQL_PASSWORD} mysql -u${MAIL_MYSQL_USERNAME} -e "$1"
+}
+
+function List {
+	if [ -z "$1" ]; then
+		Query "SELECT * FROM ${MAIL_MYSQL_DATABASE}.aliases"
+	else
+		Query "SELECT * FROM ${MAIL_MYSQL_DATABASE}.aliases WHERE id = '$1'"
+	fi
+}
+
+SELECTION="$1"
+
+if [ -z "${SELECTION}" ]; then
+	ShowMenu
+fi
+
+case "${SELECTION}" in
+	list )
+		List
+		;;
+	add )
+		if [ -z "${SOURCE}" ]; then
+			while true; do
+				Log "Source: " true
+				read SOURCE
+
+				if [ ! -z "${SOURCE}" ]; then
+					break
+				fi
+			done
+		fi
+		if [ -z "${DESTINATION}" ]; then
+			while true; do
+				Log "Destination: " true
+				read DESTINATION
+
+				if [ ! -z "${DESTINATION}" ]; then
+					break
+				fi
+			done
+		fi
+
+		Query "INSERT INTO ${MAIL_MYSQL_DATABASE}.aliases (\`source\`, \`destination\`) VALUES ('${SOURCE}', '${DESTINATION}')"
+		SOURCE=
+		DESTINATION=
+		;;
+	edit )
+		List
+		if [ -z "${ID}" ]; then
+			while true; do
+				Log "Edit row ID: " true
+				read ID
+
+				if [ ! -z "${ID}" ]; then
+					break
+				fi
+			done
+		fi
+
+		Log "Source [empty for same]: " true
+		read SOURCE
+		Log "Destination [empty for same]: " true
+		read DESTINATION
+
+		if [ -z "${SOURCE}" ] && [ ! -z "${DESTINATION}" ]; then
+			Query "UPDATE ${MAIL_MYSQL_DATABASE}.aliases SET destination = '${DESTINATION}' WHERE id = '${ID}'"
+		elif [ ! -z "${SOURCE}" ] && [ -z "${DESTINATION}" ]; then
+			Query "UPDATE ${MAIL_MYSQL_DATABASE}.aliases SET source = '${SOURCE}' WHERE id = '${ID}'"
+		elif [ ! -z "${SOURCE}" ] && [ ! -z "${DESTINATION}" ]; then
+			Query "UPDATE ${MAIL_MYSQL_DATABASE}.aliases SET source = '${SOURCE}', destination = '${DESTINATION}' WHERE id = '${ID}'"
+		fi
+
+		ID=
+		SOURCE=
+		DESTINATION=
+		;;
+	delete )
+		List
+		if [ -z "${ID}" ]; then
+			while true; do
+				Log "Edit row ID: " true
+				read ID
+
+				if [ ! -z "${ID}" ]; then
+					break
+				fi
+			done
+		fi
+
+		List ${ID}
+		Log "Are you sure you want to delete this alias [y/n]: " true
+		read YN
+
+		if [ $(echo $YN | awk '{print tolower($0)}') = "y" ]; then
+			Query "DELETE FROM ${MAIL_MYSQL_DATABASE}.aliases WHERE id = '${ID}'"
+		fi
+		;;
+	* )
+		ShowMenu
+		;;
+esac
