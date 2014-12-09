@@ -10,7 +10,7 @@ cd ${CMD}/ftp
 
 RequireInstall
 
-if [ -z "${FTP_MYSQL_DATABASE}" ] || [ -z "${FTP_MYSQL_USERNAME}" ]; then
+if [ -z "${FTP_MYSQL_DATABASE}" ] || [ -z "${FTP_MYSQL_USERNAME}" ] || [ -z "${FTP_MYSQL_PASSWORD}" ]; then
 	LogRed "FTP not configured. Missing MySQL details (${CMD}/ftp/tmp/mysql)"
 	exit
 fi
