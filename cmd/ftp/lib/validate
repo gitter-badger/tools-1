@@ -4,25 +4,3 @@ if [ -z "${FTP_MYSQL_DATABASE}" ] || [ -z "${FTP_MYSQL_USERNAME}" ] || [ -z "${F
 	LogRed "FTP not configured. Missing MySQL details (${CMD}/ftp/tmp/mysql)"
 	exit
 fi
-
-function Query {
-	MYSQL_PWD=${FTP_MYSQL_PASSWORD} mysql -u${FTP_MYSQL_USERNAME} -s -e "$1"
-}
-
-function ValidateUser {
-	USER_DATA=$(Query "SELECT * FROM ${FTP_MYSQL_DATABASE}.accounts WHERE User = '${USER}'")
-
-	if [ -z "${USER_DATA}" ]; then
-		LogRed "User not found!"
-		exit
-	fi
-}
-
-function GetUser {
-	if [ -z "${USER}" ]; then
-		Log "User: " true
-		read USER
-
-		ValidateUser
-	fi
-}

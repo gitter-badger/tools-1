@@ -5,15 +5,11 @@ source "config"
 source "${LIB}/log"
 source "${LIB}/installed"
 source "${CMD}/ftp/tmp/mysql"
+source "${CMD}/ftp/lib/validate"
 
 cd ${CMD}/ftp
 
 RequireInstall
-
-if [ -z "${FTP_MYSQL_DATABASE}" ] || [ -z "${FTP_MYSQL_USERNAME}" ] || [ -z "${FTP_MYSQL_PASSWORD}" ]; then
-	LogRed "FTP not configured. Missing MySQL details (${CMD}/ftp/tmp/mysql)"
-	exit
-fi
 
 while true; do
 	Log "Username: " true

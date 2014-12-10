@@ -6,6 +6,7 @@ source "${LIB}/log"
 source "${LIB}/installed"
 source "${CMD}/ftp/tmp/mysql"
 source "${CMD}/ftp/lib/validate"
+source "${CMD}/ftp/lib/functions"
 
 cd ${CMD}/ftp
 
