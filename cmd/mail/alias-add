@@ -1,0 +1,38 @@
+#!/bin/bash
+
+PREFIX='mail'
+source "config"
+source "${LIB}/log"
+source "${LIB}/installed"
+source "${CMD}/mail/tmp/mysql"
+source "${CMD}/mail/lib/validate"
+source "${CMD}/mail/lib/functions"
+
+cd ${CMD}/mail
+
+RequireInstall
+
+if [ -z "${SOURCE}" ]; then
+	while true; do
+		Log "Source: " true
+		read SOURCE
+
+		if [ ! -z "${SOURCE}" ]; then
+			break
+		fi
+	done
+fi
+if [ -z "${DESTINATION}" ]; then
+	while true; do
+		Log "Destination: " true
+		read DESTINATION
+
+		if [ ! -z "${DESTINATION}" ]; then
+			break
+		fi
+	done
+fi
+
+Query "INSERT INTO ${MAIL_MYSQL_DATABASE}.aliases (\`source\`, \`destination\`) VALUES ('${SOURCE}', '${DESTINATION}')"
+SOURCE=
+DESTINATION=

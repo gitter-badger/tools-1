@@ -5,15 +5,12 @@ source "config"
 source "${LIB}/log"
 source "${LIB}/installed"
 source "${CMD}/mail/tmp/mysql"
+source "${CMD}/mail/lib/validate"
+source "${CMD}/mail/lib/functions"
 
 cd ${CMD}/mail
 
 RequireInstall
-
-if [ -z "${MAIL_MYSQL_DATABASE}" ] || [ -z "${MAIL_MYSQL_USERNAME}" ]; then
-	LogRed "Mail not configured. Missing MySQL details (${CMD}/mail/tmp/mysql)"
-	exit
-fi
 
 if [ ! -z "$1" ]; then
 	EMAIL="$1"

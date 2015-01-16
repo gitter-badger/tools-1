@@ -5,25 +5,17 @@ source "config"
 source "${LIB}/log"
 source "${LIB}/installed"
 source "${CMD}/mail/tmp/mysql"
+source "${CMD}/mail/lib/validate"
+source "${CMD}/mail/lib/functions"
 
 cd ${CMD}/mail
 
 RequireInstall
 
-if [ -z "${MAIL_MYSQL_DATABASE}" ] || [ -z "${MAIL_MYSQL_USERNAME}" ] || [ -z "${MAIL_MYSQL_PASSWORD}" ]; then
-	LogRed "Mail not configured. Missing MySQL details (${CMD}/mail/tmp/mysql)"
-	exit
-fi
-
-function Query {
-	MYSQL_PWD=${MAIL_MYSQL_PASSWORD} mysql -u${MAIL_MYSQL_USERNAME} -s -e "$1"
-}
-
 function GetUserAndDomain {
 	USER=$(echo "${EMAIL}" | awk -F\@ '{print $1}')
 	DOMAIN=$(echo "${EMAIL}" | awk -F\@ '{print $2}')
 }
-
 
 UPDATE=""
 function AppendToUpdate {

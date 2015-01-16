@@ -1,0 +1,42 @@
+#!/bin/bash
+
+PREFIX='mail'
+source "config"
+source "${LIB}/log"
+source "${LIB}/installed"
+source "${CMD}/mail/tmp/mysql"
+source "${CMD}/mail/lib/validate"
+source "${CMD}/mail/lib/functions"
+
+cd ${CMD}/mail
+
+RequireInstall
+
+List
+if [ -z "${ID}" ]; then
+	while true; do
+		Log "Edit row ID: " true
+		read ID
+
+		if [ ! -z "${ID}" ]; then
+			break
+		fi
+	done
+fi
+
+Log "Source [empty for same]: " true
+read SOURCE
+Log "Destination [empty for same]: " true
+read DESTINATION
+
+if [ -z "${SOURCE}" ] && [ ! -z "${DESTINATION}" ]; then
+	Query "UPDATE ${MAIL_MYSQL_DATABASE}.aliases SET destination = '${DESTINATION}' WHERE id = '${ID}'"
+elif [ ! -z "${SOURCE}" ] && [ -z "${DESTINATION}" ]; then
+	Query "UPDATE ${MAIL_MYSQL_DATABASE}.aliases SET source = '${SOURCE}' WHERE id = '${ID}'"
+elif [ ! -z "${SOURCE}" ] && [ ! -z "${DESTINATION}" ]; then
+	Query "UPDATE ${MAIL_MYSQL_DATABASE}.aliases SET source = '${SOURCE}', destination = '${DESTINATION}' WHERE id = '${ID}'"
+fi
+
+ID=
+SOURCE=
+DESTINATION=

@@ -1,0 +1,13 @@
+#!/bin/bash
+
+function Query {
+    MYSQL_PWD=${MAIL_MYSQL_PASSWORD} mysql -u${MAIL_MYSQL_USERNAME} -s -e "$1"
+}
+
+function List {
+	if [ -z "$1" ]; then
+		Query "SELECT * FROM ${MAIL_MYSQL_DATABASE}.aliases"
+	else
+		Query "SELECT * FROM ${MAIL_MYSQL_DATABASE}.aliases WHERE id = '$1'"
+	fi
+}

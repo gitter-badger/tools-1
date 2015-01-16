@@ -1,0 +1,15 @@
+#!/bin/bash
+
+PREFIX='mail'
+source "config"
+source "${LIB}/log"
+source "${LIB}/installed"
+source "${CMD}/mail/tmp/mysql"
+source "${CMD}/mail/lib/validate"
+source "${CMD}/mail/lib/functions"
+
+cd ${CMD}/mail
+
+RequireInstall
+
+List
