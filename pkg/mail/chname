@@ -31,7 +31,7 @@ if [ -z "${EMAIL}" ]; then
 	done
 fi
 
-EMAIL_DATA=$(Query "SELECT emails.id, emails.name, emails.user, domains.domain, emails.active FROM ${MAIL_MYSQL_DATABASE}.emails LEFT JOIN ${MAIL_MYSQL_DATABASE}.domains ON emails.domain_id = domains.id WHERE emails.user = '${USER}' AND domains.domain = '${DOMAIN}'")
+EMAIL_DATA=$(Query "SELECT emails.id, emails.user, domains.domain, emails.active, emails.name FROM ${MAIL_MYSQL_DATABASE}.emails LEFT JOIN ${MAIL_MYSQL_DATABASE}.domains ON emails.domain_id = domains.id WHERE emails.user = '${USER}' AND domains.domain = '${DOMAIN}'")
 
 if [ -z "${EMAIL_DATA}" ]; then
 	LogRed "Email not found!"
@@ -39,7 +39,7 @@ if [ -z "${EMAIL_DATA}" ]; then
 fi
 
 ID=$(echo "${EMAIL_DATA}" | awk '{print $1}')
-NAME=$(echo "${EMAIL_DATA}" | awk '{print $2}')
+NAME=$(echo "${EMAIL_DATA}" | awk '{for(i=5;i<=NF;++i)printf "%s ",$i}')
 
 Log "Name: " true
 read NAME_NEW
