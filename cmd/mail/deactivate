@@ -1,0 +1,48 @@
+#!/bin/bash
+
+PREFIX='mail'
+source "config"
+source "${LIB}/log"
+source "${LIB}/installed"
+source "${CMD}/mail/tmp/mysql"
+source "${CMD}/mail/lib/validate"
+source "${CMD}/mail/lib/functions"
+
+cd ${CMD}/mail
+
+RequireInstall
+
+EMAIL="$1"
+
+GetUserAndDomain
+
+if [ -z "${EMAIL}" ]; then
+	while true; do
+		Log "Email: " true
+		read EMAIL
+
+		GetUserAndDomain
+
+		if [ -z "$DOMAIN" ]; then
+			LogBrown "Email format is invalid. Missing @"
+		else
+			break
+		fi
+	done
+fi
+
+EMAIL_DATA=$(Query "SELECT emails.id, emails.name, emails.user, domains.domain, emails.active FROM ${MAIL_MYSQL_DATABASE}.emails LEFT JOIN ${MAIL_MYSQL_DATABASE}.domains ON emails.domain_id = domains.id WHERE emails.user = '${USER}' AND domains.domain = '${DOMAIN}'")
+
+if [ -z "${EMAIL_DATA}" ]; then
+	LogRed "Email not found!"
+	exit
+fi
+
+ID=$(echo "${EMAIL_DATA}" | awk '{print $1}')
+ACTIVE=$(echo "${EMAIL_DATA}" | awk '{print $5}')
+
+AppendToUpdate "active = 0"
+
+UPDATE="UPDATE ${MAIL_MYSQL_DATABASE}.emails SET ${UPDATE} WHERE id = ${ID}"
+Query "${UPDATE}"
+LogGreen "Successfully deactivated"

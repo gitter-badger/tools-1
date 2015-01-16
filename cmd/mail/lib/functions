@@ -11,3 +11,17 @@ function List {
 		Query "SELECT * FROM ${MAIL_MYSQL_DATABASE}.aliases WHERE id = '$1'"
 	fi
 }
+
+function GetUserAndDomain {
+	USER=$(echo "${EMAIL}" | awk -F\@ '{print $1}')
+	DOMAIN=$(echo "${EMAIL}" | awk -F\@ '{print $2}')
+}
+
+UPDATE=""
+function AppendToUpdate {
+	if [ -z "${UPDATE}" ]; then
+		UPDATE="$1"
+	else
+		UPDATE="${UPDATE}, $1"
+	fi
+}
