@@ -1,0 +1,25 @@
+#!/bin/bash
+
+PREFIX='ssh'
+source "config"
+source "${LIB}/log"
+source "${LIB}/installed"
+
+cd ${PKG}/ssh
+
+RequireInstall
+
+SSHD_CONFIG="/etc/ssh/sshd_config"
+
+Log "Restoring default configuration"
+rm ${SSHD_CONFIG}
+cp ${SSHD_CONFIG}.bak ${SSHD_CONFIG}
+
+Log "Restarting ssh"
+service ssh restart 2>&1 > /dev/null
+
+MarkUninstalled
+
+Log "Default configuration restored"
+LogGreen "Uninstalled successfully"
+echo ""

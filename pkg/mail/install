@@ -1,0 +1,514 @@
+#!/bin/bash
+
+PREFIX='mail'
+source "config"
+source "${LIB}/log"
+source "${LIB}/installed"
+
+cd ${PKG}/mail
+
+ProtectDoubleInstall
+
+COLWIDTH=30
+MAXWIDTH=$(($COLWIDTH * 2 + 7))
+CONFIRMED=false
+
+function CollectData {
+	while true; do
+		if [ ! -z "${MYSQL_ROOT_PASS}" ]; then
+			RESULT=`mysql -u root -p${MYSQL_ROOT_PASS} -e "show databases" 2>&1`
+
+			if ! echo $RESULT | grep -q "ERROR 1045"; then
+				break
+			else
+				MYSQL_ROOT_PASS=
+			fi
+		fi
+
+		Log "MySQL root user password: " true
+		read -s MYSQL_ROOT_PASS
+		echo ""
+
+		if [ ! -z "${MYSQL_ROOT_PASS}" ]; then
+			RESULT=`mysql -u root -p${MYSQL_ROOT_PASS} -e "show databases" 2>&1`
+
+			if ! echo $RESULT | grep -q "ERROR 1045"; then
+				break
+			else
+				LogBrown "Wrong password for MySQL root user"
+			fi
+		else
+			LogBrown "Wrong password for MySQL root user"
+		fi
+	done
+
+	while true; do
+		Log "MySQL user [sys_mail]: " true
+		read MYSQL_USER
+
+		if [ -z "${MYSQL_USER}" ]; then
+			MYSQL_USER='sys_mail'
+		fi
+		break
+	done
+
+	while true; do
+		Log "MySQL password: " true
+		read -s MYSQL_PASS
+		echo ""
+
+		if [ ! -z "${MYSQL_PASS}" ]; then
+			break
+		fi
+	done
+
+	while true; do
+		Log "MySQL database [sys_mail]: " true
+		read MYSQL_DATABASE
+
+		if [ -z "${MYSQL_DATABASE}" ]; then
+			MYSQL_DATABASE='sys_mail'
+		fi
+		break
+	done
+
+	while true; do
+		Log "Email server domain <mail.example.com>: " true
+		read EMAIL_SERVER_DOMAIN
+
+		if [ ! -z "${EMAIL_SERVER_DOMAIN}" ]; then
+			break
+		fi
+	done
+
+	while true; do
+		Log "Default/Admin email: " true
+		read EMAIL_EMAIL
+
+		EMAIL_USER=$(echo "${EMAIL_EMAIL}" | awk -F\@ '{print $1}')
+		EMAIL_DOMAIN=$(echo "${EMAIL_EMAIL}" | awk -F\@ '{print $2}')
+
+		if [ -z "$EMAIL_DOMAIN" ]; then
+			LogRed "Email format is invalid. Missing @. Must be full email: nobody@example.com"
+		else
+			break
+		fi
+	done
+
+	while true; do
+		Log "Email password: " true
+		read -s EMAIL_PASS
+		echo ""
+
+		if [ ! -z "${EMAIL_PASS}" ]; then
+			break
+		fi
+	done
+
+	while true; do
+		Log "Email owner name: " true
+		read EMAIL_NAME
+
+		if [ ! -z "${EMAIL_NAME}" ]; then
+			break
+		fi
+	done
+
+	echo ""
+	Log 'Please confirm the data is correct:'
+
+	for (( i=1; i<=$MAXWIDTH; i++ )); do echo -n "-"; done && echo ""
+	printf "| %${COLWIDTH}s | %${COLWIDTH}s |\n" "MySQL root user password" "***********"
+	printf "| %${COLWIDTH}s | %${COLWIDTH}s |\n" "Email MySQL database user" "${MYSQL_USER}"
+	printf "| %${COLWIDTH}s | %${COLWIDTH}s |\n" "Email MySQL database password" "***********"
+	printf "| %${COLWIDTH}s | %${COLWIDTH}s |\n" "Email MySQL database" "${MYSQL_DATABASE}"
+	printf "| %${COLWIDTH}s | %${COLWIDTH}s |\n" "Email server domain" "${EMAIL_SERVER_DOMAIN}"
+	printf "| %${COLWIDTH}s | %${COLWIDTH}s |\n" "Default/Admin email" "${EMAIL_EMAIL}"
+	printf "| %${COLWIDTH}s | %${COLWIDTH}s |\n" "Default/Admin password" "***********"
+	printf "| %${COLWIDTH}s | %${COLWIDTH}s |\n" "Default/Admin email owner" "${EMAIL_NAME}"
+	for (( i=1; i<=$MAXWIDTH; i++ )); do echo -n "-"; done && echo ""
+
+	Log 'Is everything correct? [Y/n]: ' true
+	read YN
+
+	case $YN in
+
+		[nN] | [n|N][O|o] )
+			MYSQL_USER=
+			MYSQL_PASS=
+			MYSQL_DATABASE=
+			EMAIL_SERVER_DOMAIN=
+			EMAIL_EMAIL=
+			EMAIL_PASS=
+			EMAIL_NAME=
+			CollectData
+			;;
+		*)
+			CONFIRMED=true
+			;;
+	esac
+}
+
+if [ "${CONFIRMED}" != true ]; then
+	CollectData
+fi
+
+Log "Updating software repositories"
+
+apt-get update > /dev/null
+
+Log "Installing required software"
+
+if ! type mysql >/dev/null 2>&1; then
+	Log "Installing MySQL"
+	debconf-set-selections <<< "mysql-server mysql-server/root_password password ${MYSQL_ROOT_PASS}"
+	debconf-set-selections <<< "mysql-server mysql-server/root_password_again password ${MYSQL_ROOT_PASS}"
+	apt-get install -y mysql-server > /dev/null
+fi
+
+debconf-set-selections <<< "postfix postfix/mailname string ${EMAIL_SERVER_DOMAIN}"
+debconf-set-selections <<< "postfix postfix/main_mailer_type string 'Internet Site'"
+
+Log "Creating user: ${MAILUSER}"
+
+mkdir -p ${MAILDIR}
+groupadd ${MAILUSER} -g 5000
+useradd -r -u 5000 -g 5000 -d ${MAILDIR} -c "Mail server user" ${MAILUSER}
+chown ${MAILUSER}:${MAILUSER} ${MAILDIR}
+
+Log "Installing Postfix"
+echo ""
+apt-get install -y postfix postfix-mysql 2>&1 > /dev/null
+
+echo ""
+Log "Configuring Postfix"
+
+mv /etc/postfix/main.cf{,.bak}
+cat > /etc/postfix/main.cf <<EOF
+smtpd_banner = $myhostname ESMTP $mail_name
+biff = no
+append_dot_mydomain = no
+readme_directory = no
+
+smtpd_tls_cert_file = /etc/ssl/private/${EMAIL_SERVER_DOMAIN}.pem
+smtpd_tls_key_file = /etc/ssl/private/${EMAIL_SERVER_DOMAIN}.key
+smtpd_use_tls=yes
+smtpd_tls_auth_only = yes
+
+smtpd_sasl_type = dovecot
+smtpd_sasl_path = private/auth
+smtpd_sasl_auth_enable = yes
+smtpd_recipient_restrictions =
+        permit_sasl_authenticated,
+        permit_mynetworks,
+        reject_unauth_destination
+
+myhostname = ${EMAIL_SERVER_DOMAIN}
+alias_maps = hash:/etc/aliases
+alias_database = hash:/etc/aliases
+myorigin = /etc/mailname
+mydestination = localhost
+relayhost =
+mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128
+mailbox_size_limit = 0
+recipient_delimiter = +
+inet_interfaces = all
+
+virtual_transport = lmtp:unix:private/dovecot-lmtp
+
+virtual_mailbox_domains = mysql:/etc/postfix/mysql/domains.cf
+virtual_mailbox_maps = mysql:/etc/postfix/mysql/emails.cf
+virtual_alias_maps = mysql:/etc/postfix/mysql/aliases.cf
+EOF
+
+mv /etc/postfix/master.cf{,.bak}
+cat > /etc/postfix/master.cf <<EOF
+smtp      inet  n       -       -       -       -       smtpd
+submission inet n       -       -       -       -       smtpd
+  -o syslog_name=postfix/submission
+  -o smtpd_tls_security_level=encrypt
+  -o smtpd_sasl_auth_enable=yes
+  -o smtpd_relay_restrictions=permit_sasl_authenticated,reject
+pickup    unix  n       -       -       60      1       pickup
+cleanup   unix  n       -       -       -       0       cleanup
+qmgr      unix  n       -       n       300     1       qmgr
+tlsmgr    unix  -       -       -       1000?   1       tlsmgr
+rewrite   unix  -       -       -       -       -       trivial-rewrite
+bounce    unix  -       -       -       -       0       bounce
+defer     unix  -       -       -       -       0       bounce
+trace     unix  -       -       -       -       0       bounce
+verify    unix  -       -       -       -       1       verify
+flush     unix  n       -       -       1000?   0       flush
+proxymap  unix  -       -       n       -       -       proxymap
+proxywrite unix -       -       n       -       1       proxymap
+smtp      unix  -       -       -       -       -       smtp
+relay     unix  -       -       -       -       -       smtp
+showq     unix  n       -       -       -       -       showq
+error     unix  -       -       -       -       -       error
+retry     unix  -       -       -       -       -       error
+discard   unix  -       -       -       -       -       discard
+local     unix  -       n       n       -       -       local
+virtual   unix  -       n       n       -       -       virtual
+lmtp      unix  -       -       -       -       -       lmtp
+anvil     unix  -       -       -       -       1       anvil
+scache    unix  -       -       -       -       1       scache
+maildrop  unix  -       n       n       -       -       pipe
+  flags=DRhu user=vmail argv=/usr/bin/maildrop -d \${recipient}
+uucp      unix  -       n       n       -       -       pipe
+  flags=Fqhu user=uucp argv=uux -r -n -z -a\$sender - \$nexthop!rmail (\$recipient)
+ifmail    unix  -       n       n       -       -       pipe
+  flags=F user=ftn argv=/usr/lib/ifmail/ifmail -r \$nexthop (\$recipient)
+bsmtp     unix  -       n       n       -       -       pipe
+  flags=Fq. user=bsmtp argv=/usr/lib/bsmtp/bsmtp -t\$nexthop -f\$sender \$recipient
+scalemail-backend unix  -       n       n       -       2       pipe
+  flags=R user=scalemail argv=/usr/lib/scalemail/bin/scalemail-store \${nexthop} \${user} \${extension}
+mailman   unix  -       n       n       -       -       pipe
+  flags=FR user=list argv=/usr/lib/mailman/bin/postfix-to-mailman.py
+  \${nexthop} \${user}
+EOF
+
+mkdir /etc/postfix/mysql
+cat > /etc/postfix/mysql/aliases.cf <<EOF
+user = ${MYSQL_USER}
+password = ${MYSQL_PASS}
+hosts = 127.0.0.1
+dbname = ${MYSQL_DATABASE}
+query = SELECT destination FROM aliases WHERE source='%s'
+EOF
+
+cat > /etc/postfix/mysql/domains.cf <<EOF
+user = ${MYSQL_USER}
+password = ${MYSQL_PASS}
+hosts = 127.0.0.1
+dbname = ${MYSQL_DATABASE}
+query = SELECT 1 FROM domains WHERE domain='%s'
+EOF
+
+cat > /etc/postfix/mysql/emails.cf <<EOF
+user = ${MYSQL_USER}
+password = ${MYSQL_PASS}
+hosts = 127.0.0.1
+dbname = ${MYSQL_DATABASE}
+query = SELECT 1 FROM emails LEFT JOIN domains ON emails.domain_id = domains.id WHERE emails.user='%u' AND domains.domain = '%d'
+EOF
+
+chmod 700 /etc/postfix/mysql/*
+chown postfix:postfix /etc/postfix/mysql/*
+
+Log "Restarting Postfix"
+service postfix restart
+echo ""
+
+Log "Installing Dovecot"
+DEBIAN_FRONTEND=noninteractive apt-get install -y dovecot-core dovecot-imapd dovecot-lmtpd dovecot-mysql 1> /dev/null
+
+echo ""
+Log "Configuring Dovecot"
+echo ""
+
+mv /etc/dovecot/dovecot.conf{,.bak}
+cat > /etc/dovecot/dovecot.conf <<EOF
+!include_try /usr/share/dovecot/protocols.d/*.protocol
+protocols = imap lmtp
+postmaster_address=${EMAIL_SERVER_DOMAIN}
+!include conf.d/*.conf
+!include_try local.conf
+EOF
+
+mv /etc/dovecot/conf.d/10-mail.conf{,.bak}
+cat > /etc/dovecot/conf.d/10-mail.conf <<EOF
+mail_location = maildir:${MAILDIR}/%d/%n
+
+mail_privileged_group = ${MAILUSER}
+
+namespace inbox {
+  inbox = yes
+}
+EOF
+
+mv /etc/dovecot/conf.d/10-auth.conf{,.bak}
+cat > /etc/dovecot/conf.d/10-auth.conf <<EOF
+disable_plaintext_auth = yes
+auth_mechanisms = plain login
+!include auth-sql.conf.ext
+EOF
+
+mv /etc/dovecot/dovecot-sql.conf.ext{,.bak}
+cat > /etc/dovecot/dovecot-sql.conf.ext <<EOF
+driver = mysql
+connect = host=127.0.0.1 user=${MYSQL_USER} password=${MYSQL_PASS} dbname=${MYSQL_DATABASE}
+default_pass_scheme = SHA512-CRYPT
+password_query = SELECT CONCAT(emails.user, '@', domains.domain) AS user, emails.password FROM emails LEFT JOIN domains ON emails.domain_id = domains.id WHERE emails.user='%n' AND domains.domain = '%d' AND emails.active = '1'
+EOF
+
+mv /etc/dovecot/conf.d/10-master.conf{,.bak}
+cat > /etc/dovecot/conf.d/10-master.conf <<EOF
+service imap-login {
+  inet_listener imap {
+    port = 0
+  }
+  inet_listener imaps {
+  }
+}
+service pop3-login {
+  inet_listener pop3 {
+  }
+  inet_listener pop3s {
+  }
+}
+
+service lmtp {
+  unix_listener /var/spool/postfix/private/dovecot-lmtp {
+   mode = 0600
+   user = postfix
+   group = postfix
+  }
+}
+
+service imap {
+}
+
+service pop3 {
+}
+
+service auth {
+  unix_listener /var/spool/postfix/private/auth {
+    mode = 0666
+    user = postfix
+    group = postfix
+  }
+
+  unix_listener auth-userdb {
+   mode = 0600
+   user = ${MAILUSER}
+  }
+  user = dovecot
+}
+
+service auth-worker {
+  user = ${MAILUSER}
+}
+
+service dict {
+  unix_listener dict {
+  }
+}
+EOF
+
+mv /etc/dovecot/conf.d/10-ssl.conf{,.bak}
+cat > /etc/dovecot/conf.d/10-ssl.conf <<EOF
+ssl = required
+
+ssl_cert = </etc/ssl/private/${EMAIL_SERVER_DOMAIN}.pem
+ssl_key  = </etc/ssl/private/${EMAIL_SERVER_DOMAIN}.key
+EOF
+
+mv /etc/dovecot/conf.d/auth-sql.conf.ext{,.bak}
+cat > /etc/dovecot/conf.d/auth-sql.conf.ext <<EOF
+passdb {
+  driver = sql
+  args = /etc/dovecot/dovecot-sql.conf.ext
+}
+userdb {
+  driver = static
+  args = uid=vmail gid=${MAILUSER} home=${MAILDIR}/%d/%n
+}
+EOF
+
+chown -R ${MAILUSER}:dovecot /etc/dovecot
+chmod -R o-rwx /etc/dovecot
+
+cat > openssl.cnf <<EOF
+[ req ]
+prompt = no
+distinguished_name = req_distinguished_name
+
+[ req_distinguished_name ]
+C = BG
+ST = Varna
+L = Varna
+O = none
+OU = none
+CN = ${EMAIL_SERVER_DOMAIN}
+emailAddress = ${EMAIL_EMAIL}
+EOF
+
+openssl req -config openssl.cnf -x509 -newkey rsa:2048 -days 3650 -nodes -keyout "/etc/ssl/private/${EMAIL_SERVER_DOMAIN}.key" -out "/etc/ssl/private/${EMAIL_SERVER_DOMAIN}.pem" > /dev/null
+
+rm openssl.cnf
+
+chmod 640 /etc/ssl/private/${EMAIL_SERVER_DOMAIN}.key
+chmod 644 /etc/ssl/private/${EMAIL_SERVER_DOMAIN}.pem
+
+cat > db.cnf <<EOF
+CREATE DATABASE \`${MYSQL_DATABASE}\`;
+GRANT ALL ON \`${MYSQL_DATABASE}\`.* TO "${MYSQL_USER}"@"localhost" IDENTIFIED BY "${MYSQL_PASS}";
+FLUSH PRIVILEGES;
+
+USE \`${MYSQL_DATABASE}\`;
+
+CREATE TABLE IF NOT EXISTS domains (
+	id  INT NOT NULL AUTO_INCREMENT,
+	domain VARCHAR(255) NOT NULL DEFAULT "",
+
+	PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS aliases (
+	id INT NOT NULL AUTO_INCREMENT,
+	source varchar(100) NOT NULL,
+	destination text NOT NULL,
+
+	PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS emails (
+	id INT NOT NULL AUTO_INCREMENT,
+	domain_id INT NOT NULL,
+	name VARCHAR(120) NOT NULL,
+	user VARCHAR(120) NOT NULL,
+	password VARCHAR(106) NOT NULL,
+	active TINYINT(1) NOT NULL DEFAULT "1",
+
+	PRIMARY KEY (id),
+	UNIQUE KEY user (user),
+	FOREIGN KEY (domain_id) REFERENCES domains(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+INSERT INTO domains (domain) VALUES ('localhost'), ('${EMAIL_DOMAIN}');
+
+INSERT INTO aliases (source, destination) VALUES ('@localhost', '${EMAIL_EMAIL}');
+INSERT INTO aliases (source, destination) VALUES ('hostmaster@${EMAIL_DOMAIN}', '${EMAIL_EMAIL}');
+EOF
+
+Log "Setting up ${MYSQL_DATABASE} database, user ${MYSQL_USER} and default email address ${EMAIL_EMAIL} for ${EMAIL_NAME}"
+
+mysql -u root -p${MYSQL_ROOT_PASS} < db.cnf
+rm db.cnf
+
+Log "Writing local database config file"
+if [ ! -d tmp ]; then
+    mkdir tmp
+fi
+cat > tmp/mysql <<EOF
+MAIL_MYSQL_DATABASE="${MYSQL_DATABASE}"
+MAIL_MYSQL_USERNAME="${MYSQL_USER}"
+MAIL_MYSQL_PASSWORD="${MYSQL_PASS}"
+EOF
+
+chmod 400 tmp/mysql
+
+MarkInstalled
+
+cd ${TOOLS}
+bash "${PKG}/mail/create" "${EMAIL_EMAIL}" "${EMAIL_PASS}" "${EMAIL_NAME}"
+
+Log "Restarting services for changes to take effect"
+echo ""
+
+service postfix restart
+service dovecot restart
+
+echo ""
+LogGreen "Mail server successfully installed!"
+echo ""

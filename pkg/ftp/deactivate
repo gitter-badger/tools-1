@@ -1,0 +1,23 @@
+#!/bin/bash
+
+PREFIX='ftp'
+source "config"
+source "${LIB}/log"
+source "${LIB}/installed"
+source "${PKG}/ftp/tmp/mysql"
+source "${PKG}/ftp/lib/validate"
+source "${PKG}/ftp/lib/functions"
+
+cd ${PKG}/ftp
+
+RequireInstall
+
+USER="$1"
+
+GetUser
+
+ValidateUser
+
+Query "UPDATE ${FTP_MYSQL_DATABASE}.accounts SET Status = '0' WHERE User = '${USER}'"
+
+LogGreen "Deactivated"

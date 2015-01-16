@@ -1,6 +1,0 @@
-#!/bin/bash
-
-if [ -z "${MAIL_MYSQL_DATABASE}" ] || [ -z "${MAIL_MYSQL_USERNAME}" ] || [ -z "${MAIL_MYSQL_PASSWORD}" ]; then
-    LogRed "Mail not configured. Missing MySQL details (${CMD}/mail/tmp/mysql)"
-    exit
-fi

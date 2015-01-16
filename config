@@ -22,7 +22,7 @@ INSTALLDIR="/usr/local/lib"
 ####################
 
 TOOLS="$(pwd)"
-CMD="${TOOLS}/cmd"
+PKG="${TOOLS}/pkg"
 LIB="${TOOLS}/lib"
 SRC="${TOOLS}/src"
 

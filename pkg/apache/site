@@ -1,0 +1,140 @@
+#!/bin/bash
+
+PREFIX='site'
+source "config"
+source "${LIB}/log"
+source "${LIB}/installed"
+
+cd ${PKG}/apache
+
+RequireInstall
+
+DOMAIN="$1"
+
+while true; do
+	if [ -z "${DOMAIN}" ]; then
+		Log "Website domain: " true
+		read DOMAIN
+	elif ! echo "${DOMAIN}" | grep -qP '(?=^.{5,254}$)(^(?:(?!\d+\.)[a-zA-Z0-9_\-]{1,63}\.?)+(?:[a-zA-Z]{2,})$)'; then
+		LogRed "This is not valid domain name"
+		Log "Website domain: " true
+		read DOMAIN
+	else
+		break
+	fi
+done
+
+if [[ "${#DOMAIN}" -gt 32 ]]; then
+	LogRed "This domain name is too long. Max length 32 symbols"
+	exit
+fi
+
+VHOSTS=/etc/apache2/sites-available
+FPM=/etc/php5/fpm/pool.d
+
+CONF_VHOST="${VHOSTS}/${DOMAIN}.conf"
+CONF_FPM="${FPM}/${DOMAIN}.conf"
+SITE="${WEBDIR}/${DOMAIN}"
+SITE_LOGS="${SITE}/logs"
+SITE_PUBLIC="${SITE}/${WEBDIR_PUBLIC}"
+SITE_GIT="${GITDIR}/${DOMAIN}"
+SITE_GIT_SYMLINK="${SITE}/git"
+FPM_SOCKET="/var/run/php5-fpm-${DOMAIN}.sock"
+
+if [ ! -d "${WEBDIR}" ]; then
+	mkdir -p "${WEBDIR}"
+fi
+
+if [ -f "${CONF_VHOST}" ]; then
+	LogBrown "Vhost configuration file already exists (${CONF_VHOST})"
+fi
+
+if [ ! -d "${SITE}" ]; then
+	Log "Creating system user ${DOMAIN}"
+	useradd -s /bin/bash -d "${SITE}" -M "${DOMAIN}"
+
+	Log "Creating site directories at ${SITE}"
+	mkdir -p "${SITE_LOGS}"
+	mkdir -p "${SITE_PUBLIC}"
+
+	Log "Creating site git repository"
+	mkdir -p "${SITE_GIT}"
+	git --bare init "${SITE_GIT}" --template "${PKG}/apache/template" > /dev/null
+	chown -R "${DOMAIN}":"${DOMAIN}" "${SITE_GIT}"
+
+	Log "Creating git repository symlink in ${SITE_GIT_SYMLINK}"
+	ln -s "${SITE_GIT}" "${SITE_GIT_SYMLINK}"
+
+	if [ ! -f "${SITE_PUBLIC}/index.php" ]; then
+		echo "<h1>${DOMAIN} is under construction!</h1>" > "${SITE_PUBLIC}/index.php"
+		Log "Created blank index.php"
+	fi
+
+	Log "Changing ownership of all site files to ${DOMAIN}:${DOMAIN}"
+	chown -R "${DOMAIN}":"${DOMAIN}" "${SITE}"
+else
+	LogBrown "Site webroot directory already exists (${SITE})"
+
+	if [ -f "${CONF_VHOST}" ]; then
+		LogRed "Exiting... All files exists. Nothing to do"
+		exit
+	fi
+fi
+
+if [ ! -f "${CONF_VHOST}" ]; then
+cat > "$CONF_VHOST" <<EOF
+<VirtualHost *:80>
+	DocumentRoot '${SITE_PUBLIC}'
+	ServerName ${DOMAIN}
+	ServerAlias www.${DOMAIN}
+
+	<Directory ${SITE_PUBLIC}>
+		Options FollowSymLinks
+		AllowOverride All
+		Require all granted
+	</Directory>
+
+	<IfModule mod_fastcgi.c>
+		AddHandler php5-fcgi .php
+		Action php5-fcgi /php5-fcgi-${DOMAIN}
+		Alias /php5-fcgi-${DOMAIN} /usr/lib/cgi-bin/php5-fcgi-${DOMAIN}
+		FastCgiExternalServer /usr/lib/cgi-bin/php5-fcgi-${DOMAIN} -socket ${FPM_SOCKET} -pass-header Authorization
+	</IfModule>
+
+	ErrorLog ${SITE}/logs/error.log
+	CustomLog ${SITE}/logs/access.log combined
+</VirtualHost>
+EOF
+
+	Log "Vhost configuration file created"
+fi
+
+a2ensite "${DOMAIN}" > /dev/null
+Log "Vhost ${DOMAIN} enabled"
+
+Log "Reloading Apache configurations"
+service apache2 reload > /dev/null
+
+if [ ! -f "${CONF_FPM}" ]; then
+cat >> "${CONF_FPM}" <<EOF
+[${DOMAIN}]
+user = ${DOMAIN}
+group = ${DOMAIN}
+listen = ${FPM_SOCKET}
+listen.owner = www-data
+listen.group = www-data
+pm = dynamic
+pm.max_children = 5
+pm.start_servers = 2
+pm.min_spare_servers = 1
+pm.max_spare_servers = 3
+pm.max_requests = 200
+php_flag[display_errors] = on
+EOF
+	Log "php5-fpm configuration file created"
+
+	Log "Restarting php5-fpm server"
+	service php5-fpm restart > /dev/null
+fi
+
+LogGreen "Site ${DOMAIN} installed successfully"

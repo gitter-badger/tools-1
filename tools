@@ -23,7 +23,7 @@ function Join { local IFS="$1"; shift; echo -n "$*"; }
 function ShowHelp {
 	local SELECTEDCMD="$1"
 
-	cd ${CMD}
+	cd ${PKG}
 
 	COMMANDS=$(find . -maxdepth 1 -type d -not -path "." -exec basename {} \;)
 
@@ -46,21 +46,21 @@ function ShowHelp {
 }
 
 if [ -z "$1" ]; then
-	LogBrown "Available commands and their arguments:"
+	LogBrown "Available packages and their arguments:"
 	Log ""
 	ShowHelp
 	exit
 fi
 
-if [ ! -d "${CMD}/$1" ]; then
-	LogBrown "Command not found: $1"
+if [ ! -d "${PKG}/$1" ]; then
+	LogBrown "Package not found: $1"
 	Log ""
 	ShowHelp
 	exit
 fi
 
-if [ ! -f "${CMD}/$1/$2" ]; then
-	LogBrown "Command argument is invalid: $2"
+if [ ! -f "${PKG}/$1/$2" ]; then
+	LogBrown "Package argument is invalid: $2"
 	Log ""
 	ShowHelp $1
 	exit
@@ -68,4 +68,4 @@ fi
 
 # Invoke command
 
-sudo bash "${CMD}/$1/$2" "${@:3}"
+sudo bash "${PKG}/$1/$2" "${@:3}"
