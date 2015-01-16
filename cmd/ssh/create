@@ -1,0 +1,108 @@
+#!/bin/bash
+
+PREFIX='ssh'
+source "config"
+source "${LIB}/log"
+source "${LIB}/installed"
+
+cd ${CMD}/ssh
+
+USER="$1"
+NAME="$2"
+
+RequireInstall
+
+if [ -z "$USER" ]; then
+	while true; do
+		Log "System user: " true
+		read USER
+
+		SYS_UID="$(id -g ${USER} 2>&1)"
+		if echo "${SYS_UID}" | grep -q 'no such user'; then
+			LogBrown "This user does not exist"
+		else
+			break
+		fi
+	done
+fi
+
+if [ -z "${NAME}" ]; then
+	while true; do
+		Log "Key owner name: " true
+		read NAME
+
+		SYS_UID="$(id -g ${USER} 2>&1)"
+		if [ ! -z "${NAME}" ]; then
+			break
+		fi
+	done
+fi
+
+Log "Paste and press Ctrl-D on new line to save"
+KEY=$(cat)
+KEY=$(echo "${KEY}" | sed '/^$/d') # remove empty lines
+
+if ! echo "${KEY}" | grep -q "ssh-rsa "; then
+	LogRed "Key is missing \"ssh-rsa\"! Is it correct?"
+	exit
+fi
+
+if [ "${#KEY}" -lt 100 ]; then
+	LogRed "Key is less than 100 symbols long. Is it correct?"
+	exit
+fi
+
+CONFIG_FILE="${SSH_KEYS}/${USER}/${SSH_FILE}"
+
+if [ ! -f "${CONFIG_FILE}" ]; then
+	Log "Creating user config directory"
+	mkdir -p "${SSH_KEYS}/${USER}"
+
+	Log "Creating user config file"
+
+cat > "${CONFIG_FILE}" <<EOF
+${SSH_CONFIG_BANNER_START}
+
+${SSH_CONFIG_BANNER_END}
+EOF
+
+	Log "Fixing config permissions"
+	chown -R "${USER}":"${USER}" "${SSH_KEYS}/${USER}"
+	chmod 700 "${SSH_KEYS}/${USER}"
+	chmod 400 "${CONFIG_FILE}"
+
+elif ! cat ${CONFIG_FILE} | grep -q "${SSH_CONFIG_BANNER_START}"; then
+cat >> "${CONFIG_FILE}" <<EOF
+
+${SSH_CONFIG_BANNER_START}
+
+${SSH_CONFIG_BANNER_END}
+EOF
+fi
+
+KEYS=$(cat "${CONFIG_FILE}")
+
+set -- "$KEY"
+IFS=" "; declare -a KEY_PART=($*)
+if echo "${KEYS}" | grep -qF "${KEY_PART[1]}"; then
+	LogRed "This key already exists!"
+	exit
+fi
+
+KEYS=$(echo "${KEYS}" | sed "s/${SSH_CONFIG_BANNER_END}/%s/")
+
+FORMATTED_KEY="${SSH_KEY_BANNER_START}
+# ${NAME}
+${KEY}
+${SSH_KEY_BANNER_END}
+
+${SSH_CONFIG_BANNER_END}
+"
+
+NEW_KEYS=$(printf "${KEYS}" "$FORMATTED_KEY")
+
+echo "${NEW_KEYS}" > "${CONFIG_FILE}"
+
+echo ""
+LogGreen "Key created successfully"
+echo ""
