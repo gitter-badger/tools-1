@@ -1,0 +1,44 @@
+_tools()
+{
+    TOOLS="$(dirname "$(readlink -f $0)")"
+    source "${TOOLS}/config"
+    source "${LIB}/pkgs"
+
+    local CURCMD PREVCMD COMMANDS PARAMS CMD DELETE
+    COMPREPLY=()
+    CURCMD="${COMP_WORDS[COMP_CWORD]}"
+    PREVCMD="${COMP_WORDS[COMP_CWORD-1]}"
+
+    GetCommands
+
+    # Complete selected command param
+    if [ ! -z "${PREVCMD}" ]; then
+        for CMD in ${COMMANDS[@]}; do
+            if [ "${CMD}" != "${PREVCMD}" ]; then continue; fi
+
+            GetParams "${CMD}"
+
+            if [ ! -f "${PKG}/${CMD}/${INSTALLEDCACHE}" ] && [ -f "${PKG}/${CMD}/install" ]; then
+                PARAMS=('install')
+            else
+                DELETE=('install')
+                PARAMS=("${PARAMS[@]/$DELETE}")
+            fi
+
+            COMPREPLY=( $(compgen -W "${PARAMS[*]}" -- ${CURCMD}) )
+
+            return 0
+        done
+    fi
+
+    # Stop if selected all possible params
+    # Stop after you have selected command param
+    if [ "${PREVCMD}" != "${CMDNAME}" ] && [ -z "${CURCMD}" ]; then
+        return 0
+    fi
+
+    #  Complete commands
+    COMPREPLY=($(compgen -W "${COMMANDS[*]}" -- ${CURCMD}))
+    return 0
+}
+complete -F _tools tools

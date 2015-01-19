@@ -39,35 +39,7 @@ fi
 
 Log "Installing bash completion"
 if [ ! -f "/etc/bash_completion.d/${CMDNAME}" ]; then
-cat >> "/etc/bash_completion.d/${CMDNAME}" <<EOF
-_tools()
-{
-    local CURCMD PREVCMD COMMANDS DIR CMD PARAMS
-    COMPREPLY=()
-    CURCMD="\${COMP_WORDS[COMP_CWORD]}"
-    PREVCMD="\${COMP_WORDS[COMP_CWORD-1]}"
-
-    DIR=\$(dirname "\$(readlink -f /usr/local/bin/tools)")
-
-    COMMANDS=\$(find "\${DIR}/pkg/" -maxdepth 1 -type d -not -path "\${DIR}/pkg/" -exec basename {} \;)
-
-    if [ ! -z "\${PREVCMD}" ]; then
-        for CMD in \${COMMANDS}; do
-            if [ "\${CMD}" != "\${PREVCMD}" ]; then
-                continue
-            fi
-
-            PARAMS=\$(find "\${DIR}/pkg/\${CMD}/" -maxdepth 1 -type f -not -path "\${DIR}/pkg/\${CMD}/" -exec basename {} \;)
-            COMPREPLY=( \$(compgen -W "\${PARAMS}" -- \${CURCMD}) )
-            return 0
-        done
-    fi
-
-    COMPREPLY=(\$(compgen -W "\${COMMANDS}" -- \${CURCMD}))
-    return 0
-}
-complete -F _tools tools
-EOF
+    ln -s "${TOOLS}/tools_completion" /etc/bash_completion.d/tools
 else
 	LogBrown "Bash completion already exists"
 fi
