@@ -12,6 +12,7 @@ cd "${DIR}"
 
 source "config"
 source "lib/log"
+source "lib/pkgs"
 
 if [ ! -h "${BINDIR}/${CMDNAME}" ]; then
 	LogRed "${CMDNAME} is not installed! Run ./install"
@@ -23,20 +24,8 @@ function Join { local IFS="$1"; shift; echo -n "$*"; }
 function ShowHelp {
 	local SELECTEDCMD="$1"
 
-	cd ${PKG}
-
-	COMMANDS=$(find . -maxdepth 1 -type d -not -path "." -exec basename {} \;)
-
-	INSTALLED=()
-	NOTINSTALLED=()
-
-	for CM in ${COMMANDS}; do
-		if [ -f "${CM}/tmp/installed" ]; then
-			INSTALLED+=(${CM})
-		else
-			NOTINSTALLED+=(${CM})
-		fi
-	done
+	GetInstalled
+	GetNotInstalled
 
 	if [ -z "${SELECTEDCMD}" ]; then
 		if [ ${#INSTALLED} -gt 0 ]; then
@@ -55,7 +44,7 @@ function ShowHelp {
 			Log
 		fi
 	else
-		PARAMS=$(find ${SELECTEDCMD} -maxdepth 1 -type f -not -path "." -exec basename {} \;)
+		GetParams ${SELECTEDCMD}
 		Log "" true
 		for PARAM in ${PARAMS}; do
 			echo -n "${PARAM}   "

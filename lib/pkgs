@@ -1,0 +1,30 @@
+#!/bin/bash
+
+function GetCommands {
+    COMMANDS=$(find "${PKG}" -maxdepth 1 -type d -not -path "${PKG}" -exec basename {} \;)
+}
+
+function GetInstalled {
+    GetCommands
+
+    INSTALLED=()
+    for CM in ${COMMANDS}; do
+        if [ ! -f "${PKG}/${CM}/tmp/installed" ]; then continue; fi
+        INSTALLED+=(${CM})
+    done
+}
+
+function GetNotInstalled {
+    GetCommands
+
+    NOTINSTALLED=()
+    for CM in ${COMMANDS}; do
+        if [ -f "${PKG}/${CM}/tmp/installed" ]; then continue; fi
+        NOTINSTALLED+=(${CM})
+    done
+}
+
+function GetParams {
+    local SELECTED
+    PARAMS=$(find "${PKG}/${SELECTED}" -maxdepth 1 -type f -not -path "." -exec basename {} \;)
+}
