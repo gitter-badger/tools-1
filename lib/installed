@@ -1,14 +1,14 @@
 #!/bin/bash
 
 function ProtectDoubleInstall {
-    if [ -f "tmp/installed" ]; then
+    if [ -f "${INSTALLEDCACHE}" ]; then
         LogRed "Already installed!"
         exit
     fi
 }
 
 function RequireInstall {
-	if [ ! -f "tmp/installed" ]; then
+	if [ ! -f "${INSTALLEDCACHE}" ]; then
 		LogRed "This software is not installed"
 		exit
 	fi
@@ -18,11 +18,11 @@ function MarkInstalled {
     if [ ! -d "tmp" ]; then
         mkdir "tmp"
     fi
-    touch "tmp/installed"
+    touch "${INSTALLEDCACHE}"
 }
 
 function MarkUninstalled {
-    if [ -f "tmp/installed" ]; then
-    	rm "tmp/installed"
+    if [ -f "${INSTALLEDCACHE}" ]; then
+    	rm "${INSTALLEDCACHE}"
     fi
 }

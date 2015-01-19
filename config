@@ -32,6 +32,8 @@ SRC="${TOOLS}/src"
 
 USERNAME=`who am i | awk '{print $1}'`
 
+INSTALLEDCACHE="tmp/installed"
+
 # apache && nginx
 WEBDIR="/srv/www"
 WEBDIR_PUBLIC="www/public"

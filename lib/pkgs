@@ -9,7 +9,7 @@ function GetInstalled {
 
     INSTALLED=()
     for CM in ${COMMANDS}; do
-        if [ ! -f "${PKG}/${CM}/tmp/installed" ]; then continue; fi
+        if [ ! -f "${PKG}/${CM}/${INSTALLEDCACHE}" ]; then continue; fi
         INSTALLED+=(${CM})
     done
 }
@@ -19,12 +19,13 @@ function GetNotInstalled {
 
     NOTINSTALLED=()
     for CM in ${COMMANDS}; do
-        if [ -f "${PKG}/${CM}/tmp/installed" ]; then continue; fi
+        if [ -f "${PKG}/${CM}/${INSTALLEDCACHE}" ]; then continue; fi
         NOTINSTALLED+=(${CM})
     done
 }
 
 function GetParams {
     local SELECTED
+    SELECTED="$1"
     PARAMS=$(find "${PKG}/${SELECTED}" -maxdepth 1 -type f -not -path "." -exec basename {} \;)
 }
