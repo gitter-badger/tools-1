@@ -27,41 +27,60 @@ function ShowHelp {
 
 	COMMANDS=$(find . -maxdepth 1 -type d -not -path "." -exec basename {} \;)
 
+	INSTALLED=()
+	NOTINSTALLED=()
+
 	for CM in ${COMMANDS}; do
-		if [ ! -z "${SELECTEDCMD}" ]; then
-			if [ "${CM}" != "${SELECTEDCMD}" ]; then
-				continue
-			fi
+		if [ -f "${CM}/tmp/installed" ]; then
+			INSTALLED+=(${CM})
+		else
+			NOTINSTALLED+=(${CM})
 		fi
-
-		Log "${CM}" true
-
-		PARAMS=$(find ${CM} -maxdepth 1 -type f -not -path "." -exec basename {} \;)
-		if [ ${#PARAMS} -gt 0 ]; then
-			echo -n " ["; Join "|" ${PARAMS}; echo -n "]"
-		fi
-		echo ""
-		Log ""
 	done
+
+	if [ -z "${SELECTEDCMD}" ]; then
+		if [ ${#INSTALLED} -gt 0 ]; then
+			LogBrown "Installed packages:"
+			for CM in ${INSTALLED[@]}; do
+				Log "${CM}"
+			done
+			Log
+		fi
+
+		if [ ${#NOTINSTALLED} -gt 0 ]; then
+			LogBrown "Not installed packages:"
+			for CM in ${NOTINSTALLED[@]}; do
+				Log "${CM}"
+			done
+			Log
+		fi
+	else
+		PARAMS=$(find ${SELECTEDCMD} -maxdepth 1 -type f -not -path "." -exec basename {} \;)
+		Log "" true
+		for PARAM in ${PARAMS}; do
+			echo -n "${PARAM}   "
+		done
+		echo ""
+		Log
+	fi
 }
 
 if [ -z "$1" ]; then
-	LogBrown "Available packages and their arguments:"
-	Log ""
 	ShowHelp
 	exit
 fi
 
 if [ ! -d "${PKG}/$1" ]; then
-	LogBrown "Package not found: $1"
-	Log ""
+	LogRed "Package not found: $1"
+	Log
 	ShowHelp
 	exit
 fi
 
 if [ ! -f "${PKG}/$1/$2" ]; then
-	LogBrown "Package argument is invalid: $2"
-	Log ""
+	LogRed "Package argument is invalid: $2"
+	Log
+	LogBrown "Available arguments:"
 	ShowHelp $1
 	exit
 fi
