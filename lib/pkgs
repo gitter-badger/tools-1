@@ -25,7 +25,15 @@ function GetNotInstalled {
 }
 
 function GetParams {
-    local SELECTED
-    SELECTED="$1"
-    PARAMS=$(find "${PKG}/${SELECTED}" -maxdepth 1 -type f -not -path "." -exec basename {} \;)
+    local CMD
+    CMD="$1"
+
+    PARAMS=$(find "${PKG}/${CMD}" -maxdepth 1 -type f -not -path "." -exec basename {} \;)
+
+    if [ ! -f "${PKG}/${CMD}/${INSTALLEDCACHE}" ] && [ -f "${PKG}/${CMD}/install" ]; then
+        PARAMS=('install')
+    else
+        DELETE=('install')
+        PARAMS=("${PARAMS[@]/$DELETE}")
+    fi
 }

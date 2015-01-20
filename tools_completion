@@ -18,13 +18,6 @@ _tools()
 
             GetParams "${CMD}"
 
-            if [ ! -f "${PKG}/${CMD}/${INSTALLEDCACHE}" ] && [ -f "${PKG}/${CMD}/install" ]; then
-                PARAMS=('install')
-            else
-                DELETE=('install')
-                PARAMS=("${PARAMS[@]/$DELETE}")
-            fi
-
             COMPREPLY=( $(compgen -W "${PARAMS[*]}" -- ${CURCMD}) )
 
             return 0

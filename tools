@@ -44,11 +44,14 @@ function ShowHelp {
 			Log
 		fi
 	else
-		GetParams ${SELECTEDCMD}
+		GetParams "${SELECTEDCMD}"
+
 		Log "" true
+
 		for PARAM in ${PARAMS}; do
 			echo -n "${PARAM}   "
 		done
+
 		echo ""
 		Log
 	fi
