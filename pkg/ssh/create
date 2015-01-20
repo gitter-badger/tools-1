@@ -12,31 +12,31 @@ NAME="$2"
 
 RequireInstall
 
-if [ -z "$USER" ]; then
-	while true; do
+while true; do
+	if [ -z "$USER" ]; then
 		Log "System user: " true
 		read USER
+	fi
 
-		SYS_UID="$(id -g ${USER} 2>&1)"
-		if echo "${SYS_UID}" | grep -q 'no such user'; then
-			LogBrown "This user does not exist"
-		else
-			break
-		fi
-	done
-fi
+	SYS_UID="$(id -g "${USER}" 2>&1)"
+	if echo "${SYS_UID}" | grep -q 'no such user'; then
+		LogBrown "This user does not exist"
+		USER=""
+	else
+		break
+	fi
+done
 
-if [ -z "${NAME}" ]; then
-	while true; do
+while true; do
+	if [ -z "${NAME}" ]; then
 		Log "Key owner name: " true
 		read NAME
+	fi
 
-		SYS_UID="$(id -g ${USER} 2>&1)"
-		if [ ! -z "${NAME}" ]; then
-			break
-		fi
-	done
-fi
+	if [ ! -z "${NAME}" ]; then
+		break
+	fi
+done
 
 Log "Paste and press Ctrl-D on new line to save"
 KEY=$(cat)
