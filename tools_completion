@@ -1,13 +1,13 @@
 _tools()
 {
-    TOOLS="$(dirname "$(readlink -f $0)")"
-    source "${TOOLS}/config"
-    source "${LIB}/pkgs"
-
     local CURCMD PREVCMD COMMANDS PARAMS CMD DELETE
     COMPREPLY=()
     CURCMD="${COMP_WORDS[COMP_CWORD]}"
     PREVCMD="${COMP_WORDS[COMP_CWORD-1]}"
+
+    TOOLS="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
+    source "${TOOLS}/config"
+    source "${LIB}/pkgs"
 
     GetCommands
 

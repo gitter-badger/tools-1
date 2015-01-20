@@ -21,7 +21,7 @@ INSTALLDIR="/usr/local/lib"
 # Main directories #
 ####################
 
-TOOLS="$(pwd)"
+TOOLS="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 PKG="${TOOLS}/pkg"
 LIB="${TOOLS}/lib"
 SRC="${TOOLS}/src"
