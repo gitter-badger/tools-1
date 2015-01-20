@@ -12,9 +12,8 @@ cd ${PKG}/mail
 
 RequireInstall
 
-if [ ! -z "$1" ]; then
-	EMAIL="$1"
-fi
+GetUserAndDomain "$1"
+
 if [ ! -z "$2" ]; then
 	PASSWORD="$2"
 fi
@@ -22,54 +21,40 @@ if [ ! -z "$3" ]; then
 	NAME="$3"
 fi
 
-if [ -z "$NAME" ]; then
-	while true; do
-		Log "Name: " true
-		read NAME
-
-		if [ ! -z "$NAME" ]; then
-			break
-		fi
-	done
-fi
-
-if [ -z "$EMAIL" ]; then
-	while true; do
-		Log "Email: " true
-		read EMAIL
-
-		if [ ! -z "$EMAIL" ]; then
-			break
-		fi
-	done
-fi
-
-USER=$(echo "${EMAIL}" | awk -F\@ '{print $1}')
-DOMAIN=$(echo "${EMAIL}" | awk -F\@ '{print $2}')
-
-if [ -z "$DOMAIN" ]; then
-	LogRed "Email format is invalid. Missing @. Must be full email: nobody@example.com"
-	exit
-fi
-
-if [ -z "$PASSWORD" ]; then
-	while true; do
+while true; do
+	if [ -z "$PASSWORD" ]; then
 		Log "Password: " true
 		read -s PASSWORD
+	fi
 
-		if [ ! -z "${PASSWORD}" ]; then
-			echo ""
-			break
-		fi
+	if [ ! -z "${PASSWORD}" ]; then
 		echo ""
-	done
-fi
+		break
+	else
+		echo ""
+	fi
+done
 
-DOMAIN_ID=`MYSQL_PWD=${MAIL_MYSQL_PASSWORD} mysql -u${MAIL_MYSQL_USERNAME} -s -N -e "SELECT id FROM ${MAIL_MYSQL_DATABASE}.domains WHERE domain='${DOMAIN}'"`
+while true; do
+	if [ -z "$NAME" ]; then
+		Log "Name: " true
+		read NAME
+	fi
+
+	if [ ! -z "$NAME" ]; then
+		break
+	fi
+done
+
+DOMAIN_ID=$(MYSQL_PWD=${MAIL_MYSQL_PASSWORD} mysql -u${MAIL_MYSQL_USERNAME} -s -N \
+	-e "SELECT id FROM ${MAIL_MYSQL_DATABASE}.domains WHERE domain='${DOMAIN}'")
 
 if [ -z "$DOMAIN_ID" ]; then
-	MYSQL_PWD=${MAIL_MYSQL_PASSWORD} mysql -u${MAIL_MYSQL_USERNAME} -s -N -e "INSERT INTO ${MAIL_MYSQL_DATABASE}.domains (domain) VALUES ('${DOMAIN}')"
-	DOMAIN_ID=`MYSQL_PWD=${MAIL_MYSQL_PASSWORD} mysql -u${MAIL_MYSQL_USERNAME} -s -N -e "SELECT id FROM ${MAIL_MYSQL_DATABASE}.domains WHERE domain='${DOMAIN}'"`
+	MYSQL_PWD=${MAIL_MYSQL_PASSWORD} mysql -u${MAIL_MYSQL_USERNAME} -s -N -e \
+				"INSERT INTO ${MAIL_MYSQL_DATABASE}.domains (domain) VALUES ('${DOMAIN}')"
+
+	DOMAIN_ID=$(MYSQL_PWD=${MAIL_MYSQL_PASSWORD} mysql -u${MAIL_MYSQL_USERNAME} -s -N -e \
+				"SELECT id FROM ${MAIL_MYSQL_DATABASE}.domains WHERE domain='${DOMAIN}'")
 fi
 
 QUERY="
@@ -78,9 +63,9 @@ INSERT INTO ${MAIL_MYSQL_DATABASE}.emails (domain_id, name, user, password)
 ('${DOMAIN_ID}', '${NAME}', '${USER}', ENCRYPT('${PASSWORD}', CONCAT('\$6\$', SUBSTRING(SHA(RAND()), -16))));
 "
 while true; do
-	RESULT=`MYSQL_PWD=${MAIL_MYSQL_PASSWORD} mysql -u ${MAIL_MYSQL_USERNAME} -e "${QUERY}" 2>&1`
+	RESULT=$(MYSQL_PWD=${MAIL_MYSQL_PASSWORD} mysql -u ${MAIL_MYSQL_USERNAME} -e "${QUERY}" 2>&1)
 
-	if echo $RESULT | grep -q "Duplicate entry '${EMAIL}'"; then
+	if echo $RESULT | grep -q "Duplicate entry"; then
 		LogRed "This email already exists"
 		break
 	else

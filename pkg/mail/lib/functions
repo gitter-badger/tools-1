@@ -13,8 +13,24 @@ function List {
 }
 
 function GetUserAndDomain {
-	USER=$(echo "${EMAIL}" | awk -F\@ '{print $1}')
-	DOMAIN=$(echo "${EMAIL}" | awk -F\@ '{print $2}')
+	EMAIL="$1"
+	while true; do
+		if [ -z "${EMAIL}" ]; then
+			Log "Email: " true
+			read EMAIL
+		fi
+
+		USER=$(echo "${EMAIL}" | awk -F\@ '{print $1}')
+		DOMAIN=$(echo "${EMAIL}" | awk -F\@ '{print $2}')
+
+		if [ -z "$DOMAIN" ]; then
+			LogBrown "Email format is invalid. Must be full email: nobody@example.com"
+			EMAIL=""
+			DOMAIN=""
+		else
+			break
+		fi
+	done
 }
 
 UPDATE=""
