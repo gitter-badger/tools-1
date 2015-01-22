@@ -37,7 +37,6 @@ function ExtractKeys
 	KEYS=$(echo "${KEYS}" | grep -v "${SSH_CONFIG_BANNER_START}" | grep -v "${SSH_CONFIG_BANNER_END}")
 
 	if [ -z "${KEYS}" ]; then
-		Log ""
 		LogBrown "No keys found"
 		return
 	fi
@@ -47,7 +46,6 @@ function ExtractKeys
 	i=1
 	while read -r ROW; do
 		if [ "$(echo ${ROW} | head -c 1)" = "#" ]; then
-			Log ""
 			Log "$i) $(echo "${ROW}" | sed 's/^# //')"
 			((i++))
 		elif $VERBOSE; then
@@ -63,7 +61,6 @@ if [ -z "${USER}" ]; then
 	for USR in ${USERS}; do
 		Log "User: ${USR}"
 		ExtractKeys "${SSH_KEYS}/${USR}/${SSH_FILE}"
-		Log ""
 		Log $(Repeat "-" ${DASHES})
 	done
 	exit
@@ -79,5 +76,4 @@ Log "List of keys for user"
 Log "User: ${USER}"
 Log $(Repeat "-" ${DASHES})
 ExtractKeys "${SSH_KEYS}/${USER}/${SSH_FILE}"
-Log ""
 Log $(Repeat "-" ${DASHES})
