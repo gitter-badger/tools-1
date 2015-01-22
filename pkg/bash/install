@@ -3,6 +3,11 @@
 PREFIX='bash'
 source "config"
 source "${LIB}/log"
+source "${LIB}/installed"
+
+cd ${PKG}/bash
+
+ProtectDoubleInstall
 
 Log "Installing bash_profile"
 
@@ -25,6 +30,8 @@ fi
 if ! grep -q 'source /root/.bash_profile' /root/.bashrc 2> /dev/null; then
 	echo 'source /root/.bash_profile' > /root/.bashrc
 fi
+
+MarkInstalled
 
 LogGreen "Successfully installed"
 Log "Reopen terminal or use this command:"
