@@ -29,7 +29,7 @@ fi
 if [ -z "$NUMBER" ]; then
 	LIST=$(${CMDNAME} ssh list "${USER}" -v)
 
-	if echo "${LIST}" | grep -q 'No keys found'; then
+	if echo "${LIST}" | grep -q 'No .* found'; then
 		LogRed "This user does not have any keys"
 		exit
 	fi
