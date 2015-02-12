@@ -2,7 +2,7 @@
 
 while read oldrev newrev ref
 do
-	CNF="/src/tools/config"
+	CNF="/srv/tools/config"
 	if [ -f "${CNF}" ]; then
 		source ${CNF}
 	else
