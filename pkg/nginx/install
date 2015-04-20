@@ -81,7 +81,7 @@ Log "Installing git"
 apt-get install -y -q git > /dev/null
 
 POSTFIX_STATUS=$(service postfix status > /dev/null 2>&1)
-if echo ${POSTFIX_STATUS} | grep -q 'not installed'; then
+if echo ${POSTFIX_STATUS} | grep -q 'not installed' | grep -q 'unrecognized service'; then
 	Log "Installing sendmail"
 	apt-get install -y -q sendmail > /dev/null
 else
