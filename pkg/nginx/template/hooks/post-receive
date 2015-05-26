@@ -24,6 +24,13 @@ do
 
 	if [ "deploy" == "${BRANCH}" ]; then
 		GIT_WORK_TREE="${SITE_DIR}" git checkout -qf "${BRANCH}" 2>&1 >/dev/null
+
+		if [ -f "${SITE_DIR}/deploy" ]; then
+			cd "${SITE_DIR}"
+			chmod +x ./deploy
+			bash ./deploy
+		fi
+
 		echo -e "${G}Website${N} ${P}${SITE}${N} ${G}updated by ${BRANCH}${N}"
 	fi
 done
