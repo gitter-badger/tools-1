@@ -8,11 +8,7 @@ Command Line App to manage Ubuntu **v14.04 LTS** servers
 #### Install
 
 ```bash
-apt-get install -y git
-cd /srv
-git clone https://github.com/IvanDokov/tools
-cd tools
-./install
+curl -sL http://git.io/vmrmO | sudo bash -
 ```
 #### Help
 

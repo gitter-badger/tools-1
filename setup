@@ -4,7 +4,8 @@
 # one line command for install
 
 if [ -z "$SUDO_COMMAND" ]; then
-	echo 'Run as: sudo bash <(curl -sL http://git.io/vmrmO)'
+	echo 'Run as:'
+	echo 'curl -sL http://git.io/vmrmO | sudo bash -'
 	exit 0
 fi
 
