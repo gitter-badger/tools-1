@@ -80,16 +80,17 @@ mv composer.phar /usr/local/bin/composer
 Log "Installing git"
 apt-get install -y -q git > /dev/null
 
-POSTFIX_STATUS=$(service postfix status > /dev/null 2>&1)
-if echo ${POSTFIX_STATUS} | grep -q 'not installed' | grep -q 'unrecognized service'; then
-	Log "Installing sendmail"
-	apt-get install -y -q sendmail > /dev/null
-else
-	Log "Skipping sendmail, Postfix is installed"
-fi
+Log "Installing Postfix"
+debconf-set-selections <<< "postfix postfix/mailname string $(hostname)"
+debconf-set-selections <<< "postfix postfix/main_mailer_type string 'Internet Site'"
+apt-get install -y -q postfix > /dev/null
 
 MarkInstalled
 
 echo ""
 LogGreen "Installed successfully"
 echo ""
+
+debconf-set-selections <<< "postfix postfix/mailname string $(hostname)"
+debconf-set-selections <<< "postfix postfix/main_mailer_type string 'Internet Site'"
+apt-get install -y postfix
