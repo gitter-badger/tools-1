@@ -4,7 +4,7 @@
 # one line command for install
 
 if [ -z "$SUDO_COMMAND" ]; then
-	mntusr=$(id -u) grpusr=$(id -g) sudo $0 "$@"
+	echo 'Run as: sudo bash <(curl -sL http://git.io/vmrmO)'
 	exit 0
 fi
 
