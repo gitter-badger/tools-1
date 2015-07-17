@@ -54,7 +54,7 @@ fi
 
 if [ ! -d "${SITE}" ]; then
 	Log "Creating system user ${DOMAIN}"
-	useradd -s /bin/bash -d "${SITE}" -M "${DOMAIN}"
+	useradd -s /bin/bash -r -d "${SITE}" -M "${DOMAIN}"
 
 	Log "Creating site directories at ${SITE}"
 	mkdir -p "${SITE_LOGS}"

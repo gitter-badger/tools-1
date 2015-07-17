@@ -17,7 +17,7 @@ else
 fi
 
 Log "Creating TeamSpeak 3 user: ts"
-useradd -M -p! ts
+useradd -r -M -p! ts
 
 Log "Setting up permissions for user ts"
 chown -R ts:ts ${INSTALLDIR}/ts
