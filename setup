@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# Used for remote setup
+# one line command for install
+
+if [ -z "$SUDO_COMMAND" ]; then
+	mntusr=$(id -u) grpusr=$(id -g) sudo $0 "$@"
+	exit 0
+fi
+
+apt-get install -y git
+cd /srv
+git clone https://github.com/IvanDokov/tools
+cd tools
+./install
