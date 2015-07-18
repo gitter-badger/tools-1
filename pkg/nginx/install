@@ -32,19 +32,8 @@ if ! type mysql >/dev/null 2>&1; then
 	esac
 fi
 
-Log "Checking for multiverse repositories"
-if ! grep 'deb http://archive.ubuntu.com/ubuntu' /etc/apt/sources.list | grep -v '#' | grep -q 'multiverse'; then
-	echo "deb http://archive.ubuntu.com/ubuntu trusty multiverse" >> /etc/apt/sources.list;
-	Log "Added deb http://archive.ubuntu.com/ubuntu trusty multiverse"
-fi
-if ! grep 'deb http://archive.ubuntu.com/ubuntu trusty-updates multiverse' /etc/apt/sources.list | grep -v '#' | grep -q 'multiverse'; then
-	echo "deb http://archive.ubuntu.com/ubuntu trusty-updates multiverse" >> /etc/apt/sources.list;
-	Log "Added deb http://archive.ubuntu.com/ubuntu trusty-updates multiverse"
-fi
-if ! grep 'deb http://security.ubuntu.com/ubuntu trusty-security multiverse' /etc/apt/sources.list | grep -v '#' | grep -q 'multiverse'; then
-	echo "deb http://security.ubuntu.com/ubuntu trusty-security multiverse" >> /etc/apt/sources.list;
-	Log "Added deb http://security.ubuntu.com/ubuntu trusty-security multiverse"
-fi
+Log "Adding ppa for nginx stable"
+apt-add-repository ppa:nginx/stable -y 2&>1 > /dev/null
 
 Log "Updating software repositories"
 apt-get update > /dev/null
