@@ -24,7 +24,6 @@ INSTALLDIR="/usr/local/lib"
 TOOLS="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 PKG="${TOOLS}/pkg"
 LIB="${TOOLS}/lib"
-SRC="${TOOLS}/src"
 
 ####################
 # Commands configs #
