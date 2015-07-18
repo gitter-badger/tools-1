@@ -35,6 +35,9 @@ fi
 Log "Adding ppa for nginx stable"
 apt-add-repository ppa:nginx/stable -y 2&>1 > /dev/null
 
+Log "Adding ppa for php 5.6"
+apt-add-repository ppa:ondrej/php5-5.6 -y 2&>1 > /dev/null
+
 Log "Updating software repositories"
 apt-get update > /dev/null
 
