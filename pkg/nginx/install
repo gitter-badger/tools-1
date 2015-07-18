@@ -44,9 +44,6 @@ apt-get update > /dev/null
 Log "Installing nginx"
 apt-get install -y -q nginx php5-fpm php5-mysql php5-curl php5-mcrypt php5-cli php5-gd php5-intl > /dev/null
 
-Log "Restarting nginx"
-service nginx restart > /dev/null
-
 Log "Configuring php5-fpm"
 sed -i 's/upload_max_filesize = .*/upload_max_filesize = 10M/' /etc/php5/fpm/php.ini
 php5enmod mcrypt
