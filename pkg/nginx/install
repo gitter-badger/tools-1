@@ -79,7 +79,3 @@ MarkInstalled
 echo ""
 LogGreen "Installed successfully"
 echo ""
-
-debconf-set-selections <<< "postfix postfix/mailname string $(hostname)"
-debconf-set-selections <<< "postfix postfix/main_mailer_type string 'Internet Site'"
-apt-get install -y postfix
