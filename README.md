@@ -1,6 +1,8 @@
 Ubuntu Server Tools
 ============
 
+[![Join the chat at https://gitter.im/ivandokov/tools](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/ivandokov/tools?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 Command Line App to manage Ubuntu **v14.04 LTS** servers
 
 ## How to use
